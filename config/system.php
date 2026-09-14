@@ -13,6 +13,6 @@ return [
     |
     */
 
-    'deploy_token' => env('DEPLOY_TOKEN', '879f823b8d34a6f52c643d4c22dfa93131ef2e1d3c4f5e8b'),
+    'deploy_token' => env('DEPLOY_TOKEN'),
 
 ];
