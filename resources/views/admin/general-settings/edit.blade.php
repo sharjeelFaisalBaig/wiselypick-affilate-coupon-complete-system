@@ -17,9 +17,36 @@
                 @if ($settings->logo_path)
                     <img data-live-preview src="{{ Storage::url($settings->logo_path) }}" alt="" width="120" height="32" class="mb-2 h-8 w-auto object-contain">
                 @endif
-                <input type="file" name="logo" accept="image/*"
+                <input type="file" name="logo" accept="image/*" data-required-width="160" data-required-height="40"
                        class="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200">
-                <p class="mt-1 text-xs text-gray-400">* Optimal size: 160x40px, transparent PNG/SVG.</p>
+                <p class="mt-1 text-xs text-gray-400">* Required dimensions: exactly 160x40px. JPG, PNG or WEBP, up to 1MB.</p>
+                <p data-dimension-check-result class="mt-1 text-xs"></p>
+                @error('logo') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Logo Link — Main Site</label>
+                    <select name="logo_link_page" data-select2-enable data-no-clear required
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        @foreach (\App\Http\Controllers\Admin\PageSettingController::PAGES as $key => $label)
+                            <option value="{{ $key }}" @selected(old('logo_link_page', $settings->logo_link_page ?: 'home') === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Where the logo goes when clicked from anywhere outside the Blog section.</p>
+                    @error('logo_link_page') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Logo Link — Blog Site</label>
+                    <select name="logo_link_page_blog" data-select2-enable data-no-clear required
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        @foreach (\App\Http\Controllers\Admin\PageSettingController::PAGES as $key => $label)
+                            <option value="{{ $key }}" @selected(old('logo_link_page_blog', $settings->logo_link_page_blog ?: 'blogs') === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Where the logo goes when clicked from the Blog listing/detail pages or Contact Us/Terms/Privacy.</p>
+                    @error('logo_link_page_blog') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <div>
@@ -49,6 +76,14 @@
                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 <p class="mt-1 text-xs text-gray-400">e.g. "© 2015 – 2026 WisleyPick. All rights reserved."</p>
             </div>
+
+            <fieldset class="rounded-md border border-gray-200 p-4 space-y-2">
+                <legend class="px-1 text-sm font-medium text-gray-700">Contact Us Notification Recipients</legend>
+                <p class="text-xs text-gray-400">One email address per line. Every address here is emailed when a visitor submits this region's Contact Us form. Leave blank to disable admin notification emails for this region (the visitor still gets their own confirmation email).</p>
+                <textarea name="contact_notification_emails" rows="3" placeholder="support@example.com&#10;sales@example.com"
+                          class="block w-full rounded-md border-gray-300 font-mono text-xs shadow-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('contact_notification_emails', $settings->contact_notification_emails) }}</textarea>
+                @error('contact_notification_emails') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </fieldset>
 
             <div>
                 <label class="mb-2 block text-sm font-medium text-gray-700">Brand Theme Colors</label>

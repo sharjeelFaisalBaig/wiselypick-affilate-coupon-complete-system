@@ -26,6 +26,29 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Slug Prefix</label>
+                    <select name="page_slug_prefix_id" data-select2-enable data-placeholder="— Default (none) —" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— Default (none) —</option>
+                        @foreach ($pageSlugPrefixes as $pageSlugPrefix)
+                            <option value="{{ $pageSlugPrefix->id }}" @selected(old('page_slug_prefix_id', $page->page_slug_prefix_id) == $pageSlugPrefix->id)>{{ $pageSlugPrefix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">The path segment before the slug — e.g. "info". Manage options under Pages → Slug Prefixes.</p>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Slug Suffix</label>
+                    <select name="page_slug_suffix_id" data-select2-enable data-placeholder="— None —" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— None —</option>
+                        @foreach ($pageSlugSuffixes as $pageSlugSuffix)
+                            <option value="{{ $pageSlugSuffix->id }}" @selected(old('page_slug_suffix_id', $page->page_slug_suffix_id) == $pageSlugSuffix->id)>{{ $pageSlugSuffix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Optional trailing path segment after the slug. Manage options under Pages → Slug Suffixes.</p>
+                </div>
+            </div>
+
             <div>
                 <label class="mb-1 block text-sm font-medium text-gray-700">Content (HTML)</label>
                 <textarea name="content" rows="12"

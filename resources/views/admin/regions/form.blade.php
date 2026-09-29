@@ -21,9 +21,13 @@
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Prefix Slug</label>
-                    <input type="text" name="code" value="{{ old('code', $region->code) }}" required maxlength="4" placeholder="e.g. us"
+                    <input type="text" name="code" value="{{ old('code', $region->code) }}" @unless ($region->is_default) required @endunless maxlength="4" placeholder="e.g. us"
                            class="block w-full rounded-md border-gray-300 lowercase shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="mt-1 text-xs text-gray-400">URL prefix, e.g. /us, /au. 2-4 letters.</p>
+                    @if ($region->is_default)
+                        <p class="mt-1 text-xs text-gray-400">URL prefix, e.g. /us, /au. 2-4 letters. Optional for the default region only — leave blank and the site root (e.g. https://example.com/) serves this region directly instead of redirecting to a prefix.</p>
+                    @else
+                        <p class="mt-1 text-xs text-gray-400">URL prefix, e.g. /us, /au. 2-4 letters.</p>
+                    @endif
                     @error('code') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -39,9 +43,10 @@
                 @if ($region->favicon_path)
                     <img data-live-preview src="{{ Storage::url($region->favicon_path) }}" alt="" width="32" height="32" class="mb-2 h-8 w-8 rounded border border-gray-200 object-contain">
                 @endif
-                <input type="file" name="favicon" accept="image/*,.ico"
+                <input type="file" name="favicon" accept="image/*" data-required-width="32" data-required-height="32"
                        class="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200">
-                <p class="mt-1 text-xs text-gray-400">* Optimal size: 32x32px, .ico or .png.</p>
+                <p class="mt-1 text-xs text-gray-400">* Required dimensions: exactly 32x32px. JPG, PNG or WEBP, up to 512KB.</p>
+                <p data-dimension-check-result class="mt-1 text-xs"></p>
                 @error('favicon') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -51,8 +56,10 @@
                     <img data-live-preview src="{{ Storage::url($region->flag_path) }}" alt="" width="24" height="16" class="mb-2 h-4 w-6 rounded-sm border border-gray-200 object-cover">
                 @endif
                 <input type="file" name="flag" accept="image/*" data-preview-class="mb-2 hidden h-4 w-6 rounded-sm border border-gray-200 object-cover"
+                       data-required-width="24" data-required-height="16"
                        class="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200">
-                <p class="mt-1 text-xs text-gray-400">* Optimal size: 24x16px (3:2). Shown next to this region in the admin panel's region switcher.</p>
+                <p class="mt-1 text-xs text-gray-400">* Required dimensions: exactly 24x16px (3:2). JPG, PNG or WEBP, up to 512KB. Shown next to this region in the admin panel's region switcher.</p>
+                <p data-dimension-check-result class="mt-1 text-xs"></p>
                 @error('flag') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -88,6 +95,25 @@
                 <p class="mt-1 text-xs text-gray-400">Used to build every page's canonical URL (this + the page's path). Leave blank to use the resolved request host.</p>
                 @error('canonical_base_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
+
+            <fieldset class="rounded-md border border-gray-200 p-4 space-y-3">
+                <legend class="px-1 text-sm font-medium text-gray-700">robots.txt — Custom Rules</legend>
+                <p class="text-xs text-gray-400">One site path per line, starting with "/" (e.g. /coupons/), appended to this region's own dynamically-generated robots.txt.</p>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-gray-500">Allow</label>
+                        <textarea name="robots_extra_allow" rows="3" placeholder="/coupons/"
+                                  class="block w-full rounded-md border-gray-300 font-mono text-xs shadow-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('robots_extra_allow', $region->robots_extra_allow) }}</textarea>
+                        @error('robots_extra_allow') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-gray-500">Disallow</label>
+                        <textarea name="robots_extra_disallow" rows="3" placeholder="/go/"
+                                  class="block w-full rounded-md border-gray-300 font-mono text-xs shadow-sm focus:border-emerald-500 focus:ring-emerald-500">{{ old('robots_extra_disallow', $region->robots_extra_disallow) }}</textarea>
+                        @error('robots_extra_disallow') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </fieldset>
 
             @if ($region->exists)
                 <label class="flex items-center gap-2">

@@ -18,7 +18,13 @@ class BlogFactory extends Factory
     {
         $title = fake()->sentence(6);
         $paragraphs = fake()->paragraphs(8);
-        $content = collect($paragraphs)->map(fn ($p) => "<p>{$p}</p>")->implode("\n");
+        $overviewContent = collect(array_slice($paragraphs, 0, 4))->map(fn ($p) => "<p>{$p}</p>")->implode("\n");
+        $moreContent = collect(array_slice($paragraphs, 4))->map(fn ($p) => "<p>{$p}</p>")->implode("\n");
+
+        $contentSections = [
+            ['title' => 'Overview', 'anchor' => 'overview', 'content' => $overviewContent],
+            ['title' => 'How To Save More', 'anchor' => 'how-to-save-more', 'content' => $moreContent],
+        ];
 
         $toc = [
             ['text' => 'Overview', 'anchor' => 'overview', 'level' => 'h2'],
@@ -35,12 +41,12 @@ class BlogFactory extends Factory
             'title' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numberBetween(100, 999),
             'excerpt' => fake()->sentence(20),
-            'content' => $content,
+            'content_sections' => $contentSections,
             'featured_image' => null,
             'author_name' => fake()->name(),
             'author_avatar' => null,
             'published_at' => fake()->dateTimeBetween('-6 months', 'now'),
-            'reading_time_minutes' => (int) max(1, round(str_word_count(strip_tags($content)) / 200)),
+            'reading_time_minutes' => (int) max(1, round(str_word_count(strip_tags($overviewContent.$moreContent)) / 200)),
             'toc' => $toc,
             'faqs' => $faqs,
             'is_published' => true,

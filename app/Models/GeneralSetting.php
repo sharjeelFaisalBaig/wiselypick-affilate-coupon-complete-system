@@ -17,6 +17,9 @@ class GeneralSetting extends Model
         'store_page_disclaimer',
         'rights_text',
         'logo_path',
+        'logo_link_page',
+        'logo_link_page_blog',
+        'contact_notification_emails',
         'primary_color',
         'deal_color',
         'dark_surface_color',
@@ -25,6 +28,24 @@ class GeneralSetting extends Model
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
+    }
+
+    /**
+     * Parsed, validated-empty-safe list of this region's Contact Us
+     * notification recipients (item 3) — one address per line as entered
+     * in the admin form.
+     */
+    public function contactNotificationEmailList(): array
+    {
+        if (! $this->contact_notification_emails) {
+            return [];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $this->contact_notification_emails))
+            ->map(fn ($line) => trim($line))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public static function forRegion(int $regionId): self

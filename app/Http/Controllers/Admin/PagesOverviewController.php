@@ -23,9 +23,15 @@ class PagesOverviewController extends Controller
         /** @var Region $region */
         $region = $request->attributes->get('activeRegion');
 
-        $staticPagesBySlug = StaticPage::where('region_id', $region->id)
-            ->whereIn('slug', ['contact', 'terms-of-use', 'privacy-policy'])
-            ->get()->keyBy('slug');
+        // Keyed by page_type (not slug — that's freely admin-editable, see
+        // StaticPage::SEED_DEFAULTS) so this screen keeps finding "the"
+        // contact/terms/privacy page after any of them gets renamed.
+        $staticPagesByType = StaticPage::where('region_id', $region->id)
+            ->whereIn('page_type', ['contact', 'terms', 'privacy'])
+            ->get()->keyBy('page_type');
+        $staticPathFor = fn (string $type) => $staticPagesByType->has($type)
+            ? '/'.$staticPagesByType[$type]->path()
+            : null;
 
         $pageSettingsByKey = PageSetting::where('region_id', $region->id)->get()->keyBy('page_key');
         $pathFor = fn (string $pageKey) => '/'.($pageSettingsByKey->get($pageKey)?->slug ?? PageSetting::DEFAULT_SLUGS[$pageKey]);
@@ -40,23 +46,23 @@ class PagesOverviewController extends Controller
             ],
             [
                 'name' => 'Contact',
-                'path' => '/p/contact',
-                'is_active' => $staticPagesBySlug->get('contact')?->is_active ?? true,
-                'content_edit_route' => $staticPagesBySlug->has('contact') ? route('admin.static-pages.edit', $staticPagesBySlug['contact']) : null,
+                'path' => $staticPathFor('contact'),
+                'is_active' => $staticPagesByType->get('contact')?->is_active ?? true,
+                'content_edit_route' => $staticPagesByType->has('contact') ? route('admin.static-pages.edit', $staticPagesByType['contact']) : null,
                 'seo_edit_route' => route('admin.contact-page.edit'),
                 'seo_edit_label' => 'Question Agendas',
             ],
             [
                 'name' => 'Terms of Use',
-                'path' => '/p/terms-of-use',
-                'is_active' => $staticPagesBySlug->get('terms-of-use')?->is_active ?? true,
-                'content_edit_route' => $staticPagesBySlug->has('terms-of-use') ? route('admin.static-pages.edit', $staticPagesBySlug['terms-of-use']) : null,
+                'path' => $staticPathFor('terms'),
+                'is_active' => $staticPagesByType->get('terms')?->is_active ?? true,
+                'content_edit_route' => $staticPagesByType->has('terms') ? route('admin.static-pages.edit', $staticPagesByType['terms']) : null,
             ],
             [
                 'name' => 'Privacy Policy',
-                'path' => '/p/privacy-policy',
-                'is_active' => $staticPagesBySlug->get('privacy-policy')?->is_active ?? true,
-                'content_edit_route' => $staticPagesBySlug->has('privacy-policy') ? route('admin.static-pages.edit', $staticPagesBySlug['privacy-policy']) : null,
+                'path' => $staticPathFor('privacy'),
+                'is_active' => $staticPagesByType->get('privacy')?->is_active ?? true,
+                'content_edit_route' => $staticPagesByType->has('privacy') ? route('admin.static-pages.edit', $staticPagesByType['privacy']) : null,
             ],
             [
                 'name' => 'Promo Codes',

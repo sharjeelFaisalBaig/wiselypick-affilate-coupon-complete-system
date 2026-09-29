@@ -68,4 +68,31 @@ class BlogContentProcessor
 
         return max(1, (int) round($words / 200));
     }
+
+    /**
+     * Runs each content section's HTML through extractToc() (so H2/H3
+     * headings inside every section still get their own anchor ids).
+     * Returns [sections (title + processed content), toc (flattened across
+     * every section, in order)]. The section's OWN anchor (its sidebar
+     * Quick Link target) is deliberately not decided here — it's derived
+     * fresh at render time by Blog::sectionsWithAnchors(), so it stays
+     * correct for sections that never passed through this save path (e.g.
+     * backfilled from the old single-content-field data).
+     */
+    public static function processSections(array $sections): array
+    {
+        $toc = [];
+
+        $processed = collect($sections)->map(function (array $section) use (&$toc) {
+            $result = self::extractToc($section['content'] ?? '');
+            $toc = [...$toc, ...$result['toc']];
+
+            return [
+                'title' => $section['title'] ?? '',
+                'content' => $result['content'],
+            ];
+        })->all();
+
+        return ['sections' => $processed, 'toc' => $toc];
+    }
 }

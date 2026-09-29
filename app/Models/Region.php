@@ -21,6 +21,8 @@ class Region extends Model
         'body_start_script',
         'body_end_script',
         'canonical_base_url',
+        'robots_extra_allow',
+        'robots_extra_disallow',
         'is_active',
         'is_default',
         'sort_order',
@@ -52,6 +54,39 @@ class Region extends Model
     }
 
     /**
+     * The "/{code}" URL prefix every public route for this region normally
+     * sits under — empty for the one region allowed to have a blank `code`
+     * (the default region, per item 18: leaving its slug blank makes the
+     * bare site root itself serve that region, instead of redirecting to
+     * "/{code}"). Every public URL builder (Store/Blog/PageSetting/MenuItem
+     * urlFor(), the sitemap/redirect links, etc.) must go through this —
+     * never concatenate "/{$region->code}" directly — so all of them stay
+     * correct for a root-mounted default region automatically.
+     */
+    public function urlPrefix(): string
+    {
+        return $this->code ? '/'.$this->code : '';
+    }
+
+    /**
+     * Builds an absolute public URL under this region's prefix (or the bare
+     * site root, for a root-mounted default region — see urlPrefix()).
+     * $path is relative, with or without a leading slash; empty/omitted
+     * gives the region's homepage.
+     */
+    public function publicUrl(string $path = ''): string
+    {
+        $path = trim($path, '/');
+        $prefix = $this->urlPrefix();
+
+        if ($path === '') {
+            return url($prefix === '' ? '/' : $prefix);
+        }
+
+        return url($prefix.'/'.$path);
+    }
+
+    /**
      * Every page's <link rel="canonical"> is built from this + the current
      * path, rather than a hand-typed per-page canonical_url field — admins
      * were never supposed to type arbitrary canonical URLs per store/blog.
@@ -62,6 +97,34 @@ class Region extends Model
         $base = rtrim($this->canonical_base_url ?: request()->getSchemeAndHttpHost(), '/');
 
         return $base.'/'.ltrim($path, '/');
+    }
+
+    /**
+     * Admin-typed one-URL-per-line textarea, split into a clean array of
+     * absolute URLs for SitemapController to render as robots.txt lines —
+     * blank lines and stray whitespace dropped.
+     */
+    public function robotsExtraAllowLines(): array
+    {
+        return self::splitRobotsLines($this->robots_extra_allow);
+    }
+
+    public function robotsExtraDisallowLines(): array
+    {
+        return self::splitRobotsLines($this->robots_extra_disallow);
+    }
+
+    private static function splitRobotsLines(?string $value): array
+    {
+        if (! $value) {
+            return [];
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', $value))
+            ->map(fn ($line) => trim($line))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function categories(): HasMany

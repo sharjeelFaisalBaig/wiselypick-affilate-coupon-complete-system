@@ -19,33 +19,29 @@ class OfferController extends Controller
     use GuardsRegionOwnership;
 
     /**
-     * Store-scoped only, per the client's simplification: a required Store
-     * filter (auto-selected — the alphabetically-first store that actually
-     * has offers, else the alphabetically-first store overall) plus a
-     * search box and pagination. Drag-reorder (::) is built directly into
-     * this listing rather than a separate manage-order page, since it only
-     * ever makes sense scoped to one store's own sort_order sequence.
+     * "All Stores" (no store_id) is the default landing state — a
+     * region-wide, paginated, newest-first listing with a Store column.
+     * Selecting a specific store switches to the original unpaginated,
+     * sort_order-ordered listing with drag-to-reorder — reordering only
+     * ever makes sense scoped to one store's own sort_order sequence, so
+     * it's simply not offered in the All Stores view.
      */
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View
     {
         /** @var Region $region */
         $region = $request->attributes->get('activeRegion');
-
-        if ($request->missing('store_id')) {
-            $defaultStore = Store::where('region_id', $region->id)->whereHas('offers')->orderBy('name')->first()
-                ?? Store::where('region_id', $region->id)->orderBy('name')->first();
-
-            if ($defaultStore) {
-                return redirect()->route('admin.offers.index', ['store_id' => $defaultStore->id]);
-            }
-        }
 
         $stores = Store::where('region_id', $region->id)->orderBy('name')->get();
         $selectedStore = $request->filled('store_id')
             ? Store::where('region_id', $region->id)->find($request->integer('store_id'))
             : null;
 
-        $query = Offer::with('badges')->where('store_id', $selectedStore?->id ?? 0);
+        $query = Offer::with(['badges', 'store'])
+            ->when(
+                $selectedStore,
+                fn ($q) => $q->where('store_id', $selectedStore->id),
+                fn ($q) => $q->whereHas('store', fn ($sq) => $sq->where('region_id', $region->id))
+            );
 
         if ($request->filled('q')) {
             $search = $request->string('q')->value();
@@ -56,7 +52,11 @@ class OfferController extends Controller
             });
         }
 
-        $offers = $query->orderBy('sort_order')->get();
+        if ($selectedStore) {
+            $offers = $query->orderBy('sort_order')->get();
+        } else {
+            $offers = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+        }
 
         if ($request->header('X-Ajax-Filter')) {
             return view('admin.offers._results', compact('offers', 'selectedStore'));
@@ -195,7 +195,7 @@ class OfferController extends Controller
             'code' => ['nullable', 'required_if:offer_type,coupon', 'string', 'max:50'],
             'title' => ['required', 'string', 'max:255'],
             'clicks' => ['nullable', 'integer', 'min:0'],
-            'start_date' => ['nullable', 'date'],
+            'start_date' => ['nullable', 'date', 'before_or_equal:expiry_date'],
             'expiry_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'badge_ids' => ['nullable', 'array', 'max:3'],
             'badge_ids.*' => [Rule::exists('badges', 'id')->where('region_id', $region->id)],

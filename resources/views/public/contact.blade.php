@@ -21,7 +21,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('public.contact.submit', $region->code) }}" class="mt-6 space-y-5">
+        <form method="POST" action="{{ $region->publicUrl('contact') }}" class="mt-6 space-y-5">
             @csrf
 
             <div>

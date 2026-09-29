@@ -75,6 +75,10 @@ function initAjaxFilter(root) {
             // which only scans the DOM once on page load, so it never sees
             // this new content unless re-run scoped to it here.
             window.initScrollReveal?.(results);
+            // Same idea for [data-sortable] drag-to-reorder tables (e.g. the
+            // admin Coupons listing) — a freshly swapped-in <tbody> never
+            // gets its drag handlers attached otherwise.
+            window.initDragSort?.(results);
 
             if (pushState) {
                 window.history.pushState({ ajaxFilter: true, url }, '', url);

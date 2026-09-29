@@ -17,10 +17,10 @@ class CategoryController extends Controller
 
         $storesQuery = Store::where('region_id', $region->id)->where('category_id', $category->id)->visible();
 
-        $stores = (clone $storesQuery)->withCount('offers')->orderBy('name')->paginate(20)->withQueryString();
+        $stores = (clone $storesQuery)->with(['storeSlugPrefix', 'storeSlugSuffix'])->withCount('offers')->orderBy('name')->paginate(20)->withQueryString();
 
         // Full alphabetical index of every store in this category, grouped by first letter.
-        $allStoresGrouped = (clone $storesQuery)->orderBy('name')->get()
+        $allStoresGrouped = (clone $storesQuery)->with(['storeSlugPrefix', 'storeSlugSuffix'])->orderBy('name')->get()
             ->groupBy(fn (Store $store) => strtoupper(substr($store->name, 0, 1)))
             ->sortKeys();
 

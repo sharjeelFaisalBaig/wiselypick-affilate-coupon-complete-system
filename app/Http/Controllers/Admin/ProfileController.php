@@ -27,11 +27,22 @@ class ProfileController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
-            'password' => ['nullable', Password::min(8)],
+            // Only a Superadmin may change their own email or password from
+            // this screen — every other role can only get either changed by
+            // a Superadmin via Admin\UserController's edit form. Both
+            // validated (not just hidden in the form) so a non-Superadmin
+            // can't just POST the fields directly.
+            'email' => $user->isSuperadmin()
+                ? ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)]
+                : ['prohibited'],
+            'password' => $user->isSuperadmin() ? ['nullable', Password::min(8)] : ['prohibited'],
         ]);
 
-        if (filled($data['password'] ?? null)) {
+        if (! $user->isSuperadmin()) {
+            unset($data['email']);
+        }
+
+        if ($user->isSuperadmin() && filled($data['password'] ?? null)) {
             $data['password'] = bcrypt($data['password']);
         } else {
             unset($data['password']);

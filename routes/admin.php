@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BadgeController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\BlogController;
+use App\Http\Controllers\Admin\BlogSlugPrefixController;
+use App\Http\Controllers\Admin\BlogSlugSuffixController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\ContactPageController;
@@ -16,12 +18,16 @@ use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\PagesOverviewController;
 use App\Http\Controllers\Admin\PageSettingController;
+use App\Http\Controllers\Admin\PageSlugPrefixController;
+use App\Http\Controllers\Admin\PageSlugSuffixController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\RegionController;
 use App\Http\Controllers\Admin\RegionSwitchController;
 use App\Http\Controllers\Admin\ScriptInjectionController;
 use App\Http\Controllers\Admin\StaticPageController;
 use App\Http\Controllers\Admin\StoreController;
+use App\Http\Controllers\Admin\StoreSlugPrefixController;
+use App\Http\Controllers\Admin\StoreSlugSuffixController;
 use App\Http\Controllers\Admin\StoreSuffixController;
 use App\Http\Controllers\Admin\UserController;
 use App\Models\AdminSetting;
@@ -60,9 +66,9 @@ Route::prefix(AdminSetting::panelPath())->name('admin.')->group(function () {
             Route::put('admin-settings', [AdminSettingController::class, 'update'])->name('admin-settings.update');
         });
 
-        // Stores + Coupons/Offers — the "Store & Coupon Manager" role's
-        // entire scope, also reachable by Superadmin/Manager as before.
-        Route::middleware('can:manage-stores-coupons')->group(function () {
+        // Stores — the "Store & Coupon Manager" role's store-side scope,
+        // also reachable by Superadmin/Manager as before.
+        Route::middleware('can:manage-stores')->group(function () {
             Route::get('stores/suggest', [StoreController::class, 'suggest'])->name('stores.suggest');
             Route::get('stores/classification', [StoreController::class, 'classification'])->name('stores.classification');
             Route::post('stores/reorder-featured', [StoreController::class, 'reorderFeatured'])->name('stores.reorder-featured');
@@ -71,7 +77,12 @@ Route::prefix(AdminSetting::panelPath())->name('admin.')->group(function () {
             Route::post('stores/reorder-featured-offers', [StoreController::class, 'reorderFeaturedOffers'])->name('stores.reorder-featured-offers');
             Route::post('stores/{store}/toggle-active', [StoreController::class, 'toggleActive'])->name('stores.toggle-active');
             Route::resource('stores', StoreController::class)->except('show');
+        });
 
+        // Coupons/Offers — reachable by both "Store & Coupon Manager" and
+        // "Blog + Coupons Manager" (plus Superadmin/Manager as always),
+        // hence its own gate separate from Stores above.
+        Route::middleware('can:manage-coupons')->group(function () {
             Route::get('offers/suggest', [OfferController::class, 'suggest'])->name('offers.suggest');
             Route::post('offers/store/{store}/reorder', [OfferController::class, 'reorder'])->name('offers.reorder');
             Route::resource('offers', OfferController::class)->except('show');
@@ -93,12 +104,15 @@ Route::prefix(AdminSetting::panelPath())->name('admin.')->group(function () {
 
             Route::post('regions/{region}/make-default', [RegionController::class, 'makeDefault'])->name('regions.make-default');
             Route::post('regions/{region}/toggle-active', [RegionController::class, 'toggleActive'])->name('regions.toggle-active');
+            Route::post('regions/{region}/copy', [RegionController::class, 'copy'])->name('regions.copy');
+            Route::get('regions/{region}/confirm-delete', [RegionController::class, 'confirmDelete'])->name('regions.confirm-delete');
             Route::resource('regions', RegionController::class)->except('show');
 
             Route::get('menus', [MenuController::class, 'index'])->name('menus.index');
             Route::get('menus/{menu}', [MenuController::class, 'edit'])->name('menus.edit');
             Route::post('menus/{menu}/items', [MenuController::class, 'storeItem'])->name('menus.items.store');
             Route::post('menus/{menu}/items/reorder', [MenuController::class, 'reorderItems'])->name('menus.items.reorder');
+            Route::put('menus/{menu}/items/{item}', [MenuController::class, 'updateItem'])->name('menus.items.update');
             Route::delete('menus/{menu}/items/{item}', [MenuController::class, 'destroyItem'])->name('menus.items.destroy');
 
             Route::get('general-settings', [GeneralSettingController::class, 'edit'])->name('general-settings.edit');
@@ -106,6 +120,10 @@ Route::prefix(AdminSetting::panelPath())->name('admin.')->group(function () {
 
             Route::resource('badges', BadgeController::class)->except('show');
             Route::resource('store-suffixes', StoreSuffixController::class)->except('show');
+            Route::resource('store-slug-prefixes', StoreSlugPrefixController::class)->except('show');
+            Route::resource('store-slug-suffixes', StoreSlugSuffixController::class)->except('show');
+            Route::resource('blog-slug-prefixes', BlogSlugPrefixController::class)->except('show');
+            Route::resource('blog-slug-suffixes', BlogSlugSuffixController::class)->except('show');
 
             Route::get('categories/suggest', [CategoryController::class, 'suggest'])->name('categories.suggest');
             Route::post('categories/reorder', [CategoryController::class, 'reorder'])->name('categories.reorder');
@@ -120,6 +138,8 @@ Route::prefix(AdminSetting::panelPath())->name('admin.')->group(function () {
             Route::delete('contact-messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
 
             Route::resource('static-pages', StaticPageController::class)->except('show');
+            Route::resource('page-slug-prefixes', PageSlugPrefixController::class)->except('show');
+            Route::resource('page-slug-suffixes', PageSlugSuffixController::class)->except('show');
 
             Route::post('homepage-sections/reorder', [HomepageSectionController::class, 'reorder'])->name('homepage-sections.reorder');
             Route::get('homepage-sections/picker-results', [HomepageSectionController::class, 'pickerResults'])->name('homepage-sections.picker-results');

@@ -38,6 +38,25 @@ function initPicker(summaryEl) {
     // staged = the modal's working copy while it's open.
     let staged = new Map();
 
+    // Drag-to-reorder for the staged list: Map insertion order doubles as
+    // the sort order committed back to the form (renderChips() writes
+    // hidden inputs in Map iteration order, which is what the controller's
+    // syncSelections() turns into pivot sort_order). Native HTML5 DnD only
+    // reorders the DOM live as you drag — this listener pair is what syncs
+    // `staged`'s Map order to match the DOM once the drag actually
+    // completes (same drop-target-gap fix as drag-sort.js: a container-wide
+    // dragover preventDefault so drop fires even between/below rows).
+    let draggedRow = null;
+    stagedList.addEventListener('dragover', (event) => event.preventDefault());
+    stagedList.addEventListener('drop', (event) => {
+        event.preventDefault();
+        const ids = Array.from(stagedList.querySelectorAll('[data-sort-id]')).map((el) => el.dataset.sortId);
+        staged = new Map(ids.map((id) => [id, staged.get(id)]));
+        stagedList.querySelectorAll('[data-picker-order]').forEach((el, i) => {
+            el.textContent = String(i + 1);
+        });
+    });
+
     function renderChips() {
         chipsBox.innerHTML = '';
         if (committed.size === 0) {
@@ -58,23 +77,50 @@ function initPicker(summaryEl) {
         }
 
         inputsBox.innerHTML = '';
+        // Coupon/deal/mixed pickers all submit through the same field name
+        // (offer_ids[]) — only the currently-active one's inputs may be
+        // enabled, or an inactive picker's re-rendered inputs pad the
+        // submitted array past the max:5 validation limit (the same bug
+        // homepage-section-form.js's sync() guards against on load/switch;
+        // this covers the same case for inputs THIS function (re)creates
+        // afterwards, since a fresh createElement('input') is never
+        // disabled by default).
+        const wrapper = summaryEl.closest('[data-picker]');
+        const isActive = !wrapper || !wrapper.classList.contains('hidden');
         committed.forEach((label, id) => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = `${inputName}[]`;
             input.value = id;
+            input.disabled = !isActive;
             inputsBox.appendChild(input);
         });
     }
 
     function renderStaged() {
         stagedList.innerHTML = '';
+        let index = 0;
         staged.forEach((label, id) => {
+            index += 1;
             const li = document.createElement('li');
-            li.className = 'flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm shadow-sm';
+            li.dataset.sortId = id;
+            li.draggable = true;
+            li.className = 'flex cursor-grab items-center gap-2 rounded-md bg-white px-3 py-2 text-sm shadow-sm active:cursor-grabbing';
+
+            const handle = document.createElement('span');
+            handle.className = 'shrink-0 text-gray-300';
+            handle.setAttribute('aria-hidden', 'true');
+            handle.innerHTML = '<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z"/></svg>';
+
+            const order = document.createElement('span');
+            order.dataset.pickerOrder = '';
+            order.className = 'w-4 shrink-0 text-xs font-semibold text-gray-400';
+            order.textContent = String(index);
+
             const span = document.createElement('span');
-            span.className = 'truncate';
+            span.className = 'min-w-0 flex-1 truncate';
             span.textContent = label;
+
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'shrink-0 text-gray-400 hover:text-red-600';
@@ -85,7 +131,29 @@ function initPicker(summaryEl) {
                 renderStaged();
                 syncResultRowStates();
             });
-            li.append(span, removeBtn);
+
+            li.append(handle, order, span, removeBtn);
+
+            li.addEventListener('dragstart', () => {
+                draggedRow = li;
+                li.classList.add('opacity-40');
+            });
+            li.addEventListener('dragend', () => {
+                li.classList.remove('opacity-40');
+                draggedRow = null;
+            });
+            li.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                if (!draggedRow || draggedRow === li) return;
+                const bounding = li.getBoundingClientRect();
+                const offset = event.clientY - bounding.top;
+                if (offset > bounding.height / 2) {
+                    li.after(draggedRow);
+                } else {
+                    li.before(draggedRow);
+                }
+            });
+
             stagedList.appendChild(li);
         });
         countEl.textContent = String(staged.size);

@@ -14,7 +14,7 @@
 
         <ul id="browse-categories" class="hidden mt-3 space-y-1 text-sm">
             @foreach ($allCategories as $otherCategory)
-                <li><a href="{{ route('public.category', [$region->code, $otherCategory->slug]) }}" class="text-gray-600 hover:text-emerald-600 {{ $otherCategory->id === $category->id ? 'font-semibold text-emerald-600' : '' }}">{{ $otherCategory->name }}</a></li>
+                <li><a href="{{ $region->publicUrl('category/'.$otherCategory->slug) }}" class="text-gray-600 hover:text-emerald-600 {{ $otherCategory->id === $category->id ? 'font-semibold text-emerald-600' : '' }}">{{ $otherCategory->name }}</a></li>
             @endforeach
         </ul>
 

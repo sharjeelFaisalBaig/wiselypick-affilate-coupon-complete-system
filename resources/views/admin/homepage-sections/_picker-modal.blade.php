@@ -60,6 +60,7 @@
                     <p class="text-sm font-semibold text-gray-900">
                         Selected (<span data-picker-count>0</span>/{{ $max }})
                     </p>
+                    <p class="mt-0.5 text-xs text-gray-400">Drag to reorder — this order is used on the homepage.</p>
                 </div>
                 <ul data-picker-staged class="flex-1 space-y-2 overflow-y-auto p-4"></ul>
                 <div class="flex gap-2 border-t border-gray-200 p-4">

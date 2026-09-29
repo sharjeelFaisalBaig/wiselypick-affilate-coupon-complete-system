@@ -13,7 +13,7 @@
                 <form action="{{ \App\Models\PageSetting::urlFor($region, 'coupons') }}" method="GET">
                     <div class="relative">
                         <input type="search" name="q" value="{{ request('q') }}" placeholder="Search stores, coupons..." autocomplete="off"
-                               data-autosuggest-endpoint="{{ route('public.suggest.coupons', $region->code) }}"
+                               data-autosuggest-endpoint="{{ $region->publicUrl('suggest/coupons') }}"
                                class="w-56 rounded-full border-0 bg-white/10 !py-1.5 pl-4 pr-9 text-xs text-white placeholder:text-gray-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/30">
                         <button type="submit" class="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-gray-300 hover:text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
@@ -24,7 +24,19 @@
         </div>
     @endunless
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <a href="{{ \App\Models\PageSetting::urlFor($region, 'home') }}" class="group flex shrink-0 items-center gap-2">
+        @php
+            // Contact Us/Terms/Privacy read as part of the Blog site now that
+            // it's the region's default landing experience, same as the
+            // blog listing/detail pages themselves — everything else (Home,
+            // Stores, Promo Codes, a store's own detail page, a category
+            // page) is the "main/exclusive" site. See General Settings'
+            // two separate Logo Link fields.
+            $isBlogFamilyPage = in_array($pageType ?? '', ['blog_listing', 'blog_detail', 'static_page'], true);
+            $logoLinkTarget = $isBlogFamilyPage
+                ? ($generalSettings->logo_link_page_blog ?: 'blogs')
+                : ($generalSettings->logo_link_page ?: 'home');
+        @endphp
+        <a href="{{ \App\Models\PageSetting::urlFor($region, $logoLinkTarget) }}" class="group flex shrink-0 items-center gap-2">
             @if ($generalSettings->logo_path)
                 <img src="{{ Storage::url($generalSettings->logo_path) }}" alt="{{ $region->name }}" class="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
             @else
@@ -39,7 +51,7 @@
         <form action="{{ \App\Models\PageSetting::urlFor($region, $headerSearchTarget) }}" method="GET" class="hidden flex-1 justify-center md:flex">
             <div class="relative w-full max-w-96">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="{{ $headerSearchTarget === 'blogs' ? 'Search articles...' : 'Search for brands...' }}" autocomplete="off"
-                       data-autosuggest-endpoint="{{ route($headerSearchTarget === 'blogs' ? 'public.suggest.blogs' : 'public.suggest.stores', $region->code) }}"
+                       data-autosuggest-endpoint="{{ $region->publicUrl('suggest/'.$headerSearchTarget) }}"
                        class="w-full rounded-full border border-gray-300 !py-2 pl-4 pr-10 text-sm transition-shadow duration-200 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/15">
                 <button type="submit" class="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white transition-transform duration-200 hover:scale-105">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
@@ -65,7 +77,7 @@
         <form action="{{ \App\Models\PageSetting::urlFor($region, $headerSearchTarget) }}" method="GET" class="mb-4">
             <div class="relative">
                 <input type="search" name="q" value="{{ request('q') }}" placeholder="{{ $headerSearchTarget === 'blogs' ? 'Search articles...' : 'Search for brands...' }}" autocomplete="off"
-                       data-autosuggest-endpoint="{{ route($headerSearchTarget === 'blogs' ? 'public.suggest.blogs' : 'public.suggest.stores', $region->code) }}"
+                       data-autosuggest-endpoint="{{ $region->publicUrl('suggest/'.$headerSearchTarget) }}"
                        class="w-full rounded-full border border-gray-300 !py-2 pl-4 pr-10 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
                 <button type="submit" class="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-emerald-500 text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>

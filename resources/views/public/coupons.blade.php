@@ -13,7 +13,7 @@
                     <div>
                         <p class="text-xs font-bold uppercase tracking-wide text-gray-900">Search</p>
                         <input type="text" name="q" value="{{ request('q') }}" placeholder="Search promo codes..." autocomplete="off"
-                               data-autosuggest-endpoint="{{ route('public.suggest.coupons', $region->code) }}"
+                               data-autosuggest-endpoint="{{ $region->publicUrl('suggest/coupons') }}"
                                class="mt-2 block w-full rounded-md border-gray-300 py-2.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     </div>
 

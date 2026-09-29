@@ -170,7 +170,7 @@ class CategoryController extends Controller
                 Rule::unique('categories', 'slug')->where('region_id', $region->id)->where('type', self::TYPE)->ignore($category),
             ],
             'icon' => ['nullable', 'string', 'max:255'],
-            'icon_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:512'],
+            'icon_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024', 'dimensions:width=500,height=500'],
             'description' => ['nullable', 'string'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:255'],

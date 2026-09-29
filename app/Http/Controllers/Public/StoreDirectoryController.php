@@ -19,7 +19,8 @@ class StoreDirectoryController extends Controller
         $stores = Store::where('region_id', $region->id)->visible()
             ->where('name', 'like', "%{$q}%")
             ->when($request->filled('category_id'), fn ($sq) => $sq->where('category_id', $request->integer('category_id')))
-            ->orderBy('name')->limit(8)->get(['slug', 'name', 'route_prefix', 'route_suffix']);
+            ->with(['storeSlugPrefix', 'storeSlugSuffix'])
+            ->orderBy('name')->limit(8)->get(['id', 'slug', 'name', 'store_slug_prefix_id', 'store_slug_suffix_id']);
 
         return response()->json($stores->map(fn ($store) => [
             'label' => $store->name,
@@ -30,6 +31,7 @@ class StoreDirectoryController extends Controller
     public function index(Request $request, Region $region): View
     {
         $query = Store::where('region_id', $region->id)->visible()
+            ->with(['storeSlugPrefix', 'storeSlugSuffix'])
             ->withCount([
                 'coupons as active_coupons_count' => fn ($q) => $q->where('is_active', true),
                 'deals as active_deals_count' => fn ($q) => $q->where('is_active', true),
@@ -53,7 +55,8 @@ class StoreDirectoryController extends Controller
         // Row 2's paginated/filtered grid — grouped by first letter, with
         // letters that have zero stores omitted entirely.
         $directory = Store::where('region_id', $region->id)->visible()
-            ->orderBy('name')->get(['name', 'slug', 'route_prefix', 'route_suffix'])
+            ->with(['storeSlugPrefix', 'storeSlugSuffix'])
+            ->orderBy('name')->get(['id', 'name', 'slug', 'store_slug_prefix_id', 'store_slug_suffix_id'])
             ->groupBy(fn ($store) => mb_strtoupper(mb_substr($store->name, 0, 1)));
 
         $settings = PageSetting::forPage($region->id, 'stores');
@@ -61,6 +64,7 @@ class StoreDirectoryController extends Controller
         $viewData = [
             'region' => $region,
             'pageType' => 'stores_directory',
+            'currentPageScripts' => $settings,
             'stores' => $stores,
             'categories' => $categories,
             'selectedCategoryId' => $request->integer('category_id') ?: null,

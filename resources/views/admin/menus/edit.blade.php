@@ -26,11 +26,41 @@
                             <td class="px-4 py-3 text-gray-500">{{ $item->url }}</td>
                             <td class="px-4 py-3 text-gray-500">{{ $item->target === 'new_tab' ? 'New Tab' : 'Same Tab' }}</td>
                             <td class="px-4 py-3 text-right">
-                                <form action="{{ route('admin.menus.items.destroy', [$menu, $item]) }}" method="POST" class="inline"
+                                <button type="button" data-toggle="#edit-item-{{ $item->id }}" class="font-medium text-emerald-600 hover:text-emerald-700">Edit</button>
+                                <form action="{{ route('admin.menus.items.destroy', [$menu, $item]) }}" method="POST" class="ml-3 inline"
                                       onsubmit="return confirm('Remove this menu item?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="font-medium text-red-600 hover:text-red-700">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr id="edit-item-{{ $item->id }}" class="hidden bg-gray-50">
+                            <td colspan="4" class="px-4 py-4">
+                                <form action="{{ route('admin.menus.items.update', [$menu, $item]) }}" method="POST" class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
+                                    @csrf
+                                    @method('PUT')
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-500">Item Title</label>
+                                        <input type="text" name="title" value="{{ $item->title }}" required
+                                               class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-500">Custom Link (URL)</label>
+                                        <input type="text" name="url" value="{{ $item->url }}" required
+                                               class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-500">Target</label>
+                                        <select name="target" data-select2-enable class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                            <option value="same_tab" @selected($item->target === 'same_tab')>Same Tab</option>
+                                            <option value="new_tab" @selected($item->target === 'new_tab')>New Tab</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="submit" class="rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-600">Save</button>
+                                        <button type="button" data-toggle="#edit-item-{{ $item->id }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
@@ -52,7 +82,7 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-medium text-gray-500">Custom Link (URL)</label>
-                    <input type="text" name="url" required placeholder="/exclusive or https://..."
+                    <input type="text" name="url" required placeholder="/coupons or https://..."
                            class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 </div>
                 <div>

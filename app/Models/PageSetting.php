@@ -50,7 +50,7 @@ class PageSetting extends Model
         return static::where('region_id', $regionId)->where('page_key', $pageKey)->first();
     }
 
-    public const DEFAULT_SLUGS = ['home' => 'exclusive', 'stores' => 'exclusive/stores', 'coupons' => 'exclusive/coupons', 'blogs' => ''];
+    public const DEFAULT_SLUGS = ['home' => '', 'stores' => 'stores', 'coupons' => 'coupons', 'blogs' => 'blogs'];
 
     /**
      * The live "/{region}/{slug}" URL for one of the 4 fixed pages, driven
@@ -62,7 +62,7 @@ class PageSetting extends Model
     {
         $slug = static::forPage($region->id, $pageKey)?->slug ?? self::DEFAULT_SLUGS[$pageKey] ?? $pageKey;
 
-        return $slug === '' ? url("/{$region->code}") : url("/{$region->code}/{$slug}");
+        return $region->publicUrl($slug);
     }
 
     /**

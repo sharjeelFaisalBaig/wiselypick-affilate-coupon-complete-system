@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mb-4 flex items-center justify-between">
-        <p class="text-sm text-gray-500">Terms of Use, Privacy Policy, Contact intro copy, and any other flat pages (served at /{region}/p/{slug}).</p>
+        <p class="text-sm text-gray-500">Terms of Use, Privacy Policy, Contact intro copy, and any other flat pages — each admin-manageable slug prefix/suffix under Page Slugs.</p>
         <a href="{{ route('admin.static-pages.create') }}" class="rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-md active:translate-y-0">
             + Add Page
         </a>

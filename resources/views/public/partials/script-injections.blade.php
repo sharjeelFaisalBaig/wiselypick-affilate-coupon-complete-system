@@ -2,7 +2,7 @@
 @php
     $injections = \App\Models\ScriptInjection::where('region_id', $region->id)
         ->where('placement', $placement)
-        ->forPage($pageType, $storeId ?? null)
+        ->matchingPage($pageType, $storeId ?? null)
         ->get();
 
     // is_active here is deliberately NOT a rendering gate — it's read-only

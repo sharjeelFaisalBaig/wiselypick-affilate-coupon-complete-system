@@ -59,6 +59,22 @@ class MenuController extends Controller
         return redirect()->route('admin.menus.edit', $menu)->with('status', 'Menu item added.');
     }
 
+    public function updateItem(Request $request, Menu $menu, MenuItem $item): RedirectResponse
+    {
+        $this->abortUnlessOwnedByActiveRegion($request, $menu->region_id);
+        abort_if($item->menu_id !== $menu->id, 404);
+
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'url' => ['required', 'string', 'max:2048'],
+            'target' => ['required', 'in:same_tab,new_tab'],
+        ]);
+
+        $item->update($data);
+
+        return redirect()->route('admin.menus.edit', $menu)->with('status', 'Menu item updated.');
+    }
+
     public function destroyItem(Request $request, Menu $menu, MenuItem $item): RedirectResponse
     {
         $this->abortUnlessOwnedByActiveRegion($request, $menu->region_id);

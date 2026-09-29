@@ -46,6 +46,7 @@ class StoreController extends Controller
             'pageType' => 'store_detail',
             'storeId' => $store->id,
             'store' => $store,
+            'currentPageScripts' => $store,
             'offers' => $offers,
             'couponCount' => $couponCount,
             'dealCount' => $dealCount,

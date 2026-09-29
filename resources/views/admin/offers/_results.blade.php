@@ -1,11 +1,10 @@
 @php
-    // Store and Discount columns are gone per the simplification — this
-    // listing is always scoped to one store already (shown as the filter
-    // above), and there's no numeric discount left to show, just the
-    // free-text Title. Dragging only makes sense on the unfiltered,
-    // sort_order-ordered list, so the handle/reorder is disabled while a
-    // search is active.
+    // Reordering only ever makes sense scoped to one store's own sort_order
+    // sequence — disabled whenever "All Stores" is selected (no $selectedStore)
+    // or a search is active (dragging a filtered subset would silently
+    // corrupt the full, unfiltered order).
     $reorderable = $selectedStore && ! request()->filled('q');
+    $isPaginated = ! $selectedStore;
 @endphp
 <div class="overflow-visible rounded-xl border border-gray-200 bg-white shadow-sm" data-reorder-loading-target>
     <table class="w-full text-left text-sm">
@@ -15,6 +14,9 @@
                     <th class="w-8 px-2 py-3"></th>
                 @endif
                 <th class="px-4 py-3">Title</th>
+                @unless ($selectedStore)
+                    <th class="px-4 py-3">Store</th>
+                @endunless
                 <th class="px-4 py-3">Type</th>
                 <th class="px-4 py-3">Features</th>
                 <th class="px-4 py-3">Uses</th>
@@ -30,6 +32,9 @@
                         <td class="px-2 py-3 text-center text-gray-300" aria-hidden="true">⠿</td>
                     @endif
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $offer->title }}</td>
+                    @unless ($selectedStore)
+                        <td class="px-4 py-3 text-gray-500">{{ $offer->store->name }}</td>
+                    @endunless
                     <td class="px-4 py-3 text-gray-500">{{ ucfirst($offer->offer_type) }}</td>
                     <td class="px-4 py-3 text-gray-500">
                         @foreach ($offer->badges as $badge)
@@ -61,8 +66,12 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="{{ $reorderable ? 8 : 7 }}" class="px-4 py-6 text-center text-gray-400">No promotions match.</td></tr>
+                <tr><td colspan="{{ $reorderable ? 8 : ($selectedStore ? 7 : 8) }}" class="px-4 py-6 text-center text-gray-400">No promotions match.</td></tr>
             @endforelse
         </tbody>
     </table>
 </div>
+
+@if ($isPaginated)
+    <div class="mt-4">{{ $offers->links() }}</div>
+@endif

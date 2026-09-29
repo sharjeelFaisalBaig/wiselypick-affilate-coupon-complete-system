@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\GuardsRegionOwnership;
+use App\Http\Controllers\Admin\Concerns\ValidatesAbsoluteUrlConflicts;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Offer;
 use App\Models\Region;
 use App\Models\Store;
+use App\Models\StoreSlugPrefix;
+use App\Models\StoreSlugSuffix;
 use App\Models\StoreSuffix;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,13 +23,14 @@ use Illuminate\View\View;
 class StoreController extends Controller
 {
     use GuardsRegionOwnership;
+    use ValidatesAbsoluteUrlConflicts;
 
     public function index(Request $request): View
     {
         /** @var Region $region */
         $region = $request->attributes->get('activeRegion');
 
-        $query = Store::where('region_id', $region->id)->with('category');
+        $query = Store::where('region_id', $region->id)->with(['category', 'storeSlugPrefix', 'storeSlugSuffix']);
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->integer('category_id'));
@@ -65,9 +69,9 @@ class StoreController extends Controller
         match ($request->string('scope')->value()) {
             'featured' => $query->where('is_featured', true),
             'popular' => $query->where('is_popular', true),
-            // Matches classification()'s pending query — either form of
-            // pending (Store State or the checkbox) belongs in this tab.
-            'pending' => $query->where(fn ($pq) => $pq->where('is_active', false)->orWhere('is_pending', true)),
+            // Matches classification()'s pending query — Store State alone
+            // decides pending/active (see the comment there for why).
+            'pending' => $query->where('is_active', false),
             default => null,
         };
 
@@ -97,11 +101,15 @@ class StoreController extends Controller
         $region = $request->attributes->get('activeRegion');
         $categories = Category::where('region_id', $region->id)->where('type', 'store')->orderBy('name')->get();
         $storeSuffixes = StoreSuffix::where('region_id', $region->id)->where('is_active', true)->orderBy('name')->get();
+        $storeSlugPrefixes = StoreSlugPrefix::where('region_id', $region->id)->where('is_active', true)->orderBy('value')->get();
+        $storeSlugSuffixes = StoreSlugSuffix::where('region_id', $region->id)->where('is_active', true)->orderBy('value')->get();
 
         return view('admin.stores.form', [
             'store' => new Store(),
             'categories' => $categories,
             'storeSuffixes' => $storeSuffixes,
+            'storeSlugPrefixes' => $storeSlugPrefixes,
+            'storeSlugSuffixes' => $storeSlugSuffixes,
         ]);
     }
 
@@ -123,6 +131,8 @@ class StoreController extends Controller
         $data['og_title'] = $data['og_title'] ?: $data['meta_title'];
         $data['og_description'] = $data['og_description'] ?: $data['meta_description'];
 
+        $this->guardAgainstUrlConflict($this->prospectiveUrl($data, $region), 'store', null);
+
         if ($request->hasFile('logo')) {
             $data['logo_path'] = $request->file('logo')->store('stores', 'public');
         }
@@ -138,11 +148,15 @@ class StoreController extends Controller
 
         $categories = Category::where('region_id', $store->region_id)->where('type', 'store')->orderBy('name')->get();
         $storeSuffixes = StoreSuffix::where('region_id', $store->region_id)->where('is_active', true)->orderBy('name')->get();
+        $storeSlugPrefixes = StoreSlugPrefix::where('region_id', $store->region_id)->where('is_active', true)->orderBy('value')->get();
+        $storeSlugSuffixes = StoreSlugSuffix::where('region_id', $store->region_id)->where('is_active', true)->orderBy('value')->get();
 
         return view('admin.stores.form', [
             'store' => $store,
             'categories' => $categories,
             'storeSuffixes' => $storeSuffixes,
+            'storeSlugPrefixes' => $storeSlugPrefixes,
+            'storeSlugSuffixes' => $storeSlugSuffixes,
         ]);
     }
 
@@ -158,6 +172,11 @@ class StoreController extends Controller
         } else {
             unset($data['slug']);
         }
+
+        $this->guardAgainstUrlConflict(
+            $this->prospectiveUrl($data + ['slug' => $data['slug'] ?? $store->slug], $store->region),
+            'store', $store->id
+        );
 
         if ($request->hasFile('logo')) {
             if ($store->logo_path) {
@@ -204,12 +223,12 @@ class StoreController extends Controller
 
         $featured = Store::where('region_id', $region->id)->where('is_featured', true)->with('category')->orderBy('featured_order')->get();
         $popular = Store::where('region_id', $region->id)->where('is_popular', true)->with('category')->orderBy('popular_order')->get();
-        // A store is "pending" here if EITHER its Store State is Pending
-        // (is_active false) OR the Pending curation checkbox is on — both
-        // now equally hide it from the frontend (Store::scopeVisible()), so
-        // both equally belong in this list rather than only the checkbox.
+        // Store State alone decides pending/active — a store with Store
+        // State = Active belongs in the Active list everywhere in the admin
+        // panel, this tab included, regardless of the legacy is_pending
+        // column (no form field sets it anymore; see Store::scopeVisible()).
         $pending = Store::where('region_id', $region->id)
-            ->where(fn ($q) => $q->where('is_active', false)->orWhere('is_pending', true))
+            ->where('is_active', false)
             ->with('category')->orderBy('pending_order')->get();
 
         // Featured Deals: every featured offer across every store in the
@@ -286,15 +305,22 @@ class StoreController extends Controller
                 'nullable', 'string', 'max:255', 'alpha_dash',
                 Rule::unique('stores', 'slug')->where('region_id', $region->id)->ignore($store),
             ],
-            'route_prefix' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+(\/[a-z0-9-]+)*$/', $this->notReservedPrefix()],
-            'route_suffix' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+(\/[a-z0-9-]+)*$/'],
+            'store_slug_prefix_id' => [
+                'nullable',
+                Rule::exists('store_slug_prefixes', 'id')->where('region_id', $region->id),
+            ],
+            'store_slug_suffix_id' => [
+                'nullable',
+                Rule::exists('store_slug_suffixes', 'id')->where('region_id', $region->id),
+            ],
             'about' => ['nullable', 'string'],
             'store_suffix_id' => [
                 'nullable',
                 Rule::exists('store_suffixes', 'id')->where('region_id', $region->id),
             ],
             'affiliate_url' => ['required', 'url:https,http', 'max:2048'],
-            'expiry_date' => ['nullable', 'date'],
+            'start_date' => ['nullable', 'date', 'before_or_equal:expiry_date'],
+            'expiry_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'star_rating' => ['required', 'numeric', 'min:0', 'max:5'],
             'reviews_count' => ['nullable', 'integer', 'min:0'],
             'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024', 'dimensions:width=200,height=200'],
@@ -313,6 +339,15 @@ class StoreController extends Controller
         $data['reviews_count'] = $data['reviews_count'] ?? 0;
         $data['is_featured'] = $request->boolean('is_featured');
         $data['is_popular'] = $request->boolean('is_popular');
+        $data['starts_from_root'] = $request->boolean('starts_from_root');
+        // The two are mutually exclusive by construction (the prefix select
+        // is disabled client-side while this is checked — see
+        // stores/form.blade.php) — nulled server-side too so a stray
+        // prefix pick can never survive with starts_from_root regardless of
+        // what the client actually submitted.
+        if ($data['starts_from_root']) {
+            $data['store_slug_prefix_id'] = null;
+        }
         // No longer a form field — Pending is driven solely by Store State
         // below now. Deliberately not touched here (vs. reading a checkbox
         // that no longer exists and always resetting it to false), so any
@@ -327,28 +362,22 @@ class StoreController extends Controller
     }
 
     /**
-     * The prefix must not collide with one of the other fixed literal route
-     * prefixes registered ahead of the catch-all (p/suggest/go/contact, and
-     * the two-segment exclusive/category) — a store whose prefix collided
-     * would never actually be reachable, since those routes always match
-     * first. Note "exclusive" alone is NOT reserved — it's the store's own
-     * default prefix (Store::DEFAULT_ROUTE_PREFIX) and must stay assignable.
+     * The absolute URL $data would produce if saved, computed via an
+     * unsaved Store instance so it always goes through the exact same
+     * Store::path()/urlFor() logic the live site itself resolves against —
+     * see AbsoluteUrlRegistry for why this then gets checked against every
+     * region, not just this one.
      */
-    private function notReservedPrefix(): \Closure
+    private function prospectiveUrl(array $data, Region $region): string
     {
-        return function (string $attribute, mixed $value, \Closure $fail) {
-            if (! $value) {
-                return;
-            }
+        $prospective = new Store([
+            'slug' => $data['slug'],
+            'store_slug_prefix_id' => $data['store_slug_prefix_id'] ?? null,
+            'store_slug_suffix_id' => $data['store_slug_suffix_id'] ?? null,
+            'starts_from_root' => $data['starts_from_root'] ?? false,
+        ]);
 
-            $segments = explode('/', strtolower(trim($value, '/')));
-            if (in_array($segments[0], ['p', 'suggest', 'go', 'contact'], true)) {
-                $fail("The prefix can't start with \"{$segments[0]}\" — that path is already used elsewhere on the site.");
-            }
-            if (($segments[0] ?? null) === 'exclusive' && ($segments[1] ?? null) === 'category') {
-                $fail('The prefix can\'t be "exclusive/category" — that path is already used elsewhere on the site.');
-            }
-        };
+        return $prospective->urlFor($region);
     }
 
     private function uniqueSlug(string $name, int $regionId, ?int $exceptId = null): string

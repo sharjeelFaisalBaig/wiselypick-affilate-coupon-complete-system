@@ -40,6 +40,7 @@
                     <option value="superadmin" @selected(old('role', $user->role) === 'superadmin')>Superadmin — full access including Users</option>
                     <option value="store_coupon_manager" @selected(old('role', $user->role) === 'store_coupon_manager')>Store &amp; Coupon Manager — Stores and Coupons only</option>
                     <option value="blog_manager" @selected(old('role', $user->role) === 'blog_manager')>Blog Manager — Blogs only</option>
+                    <option value="blog_coupon_manager" @selected(old('role', $user->role) === 'blog_coupon_manager')>Blog + Coupons Manager — Blogs and Coupons only</option>
                 </select>
             </div>
 

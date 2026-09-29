@@ -11,11 +11,15 @@ use Illuminate\View\View;
 
 class PageSettingController extends Controller
 {
+    // Labels intentionally don't hardcode each page's URL — every one of
+    // these has an admin-editable slug (see the "Editable URL slug" field
+    // on each page's own settings screen), so a baked-in path here would
+    // just go stale the first time someone changes it.
     public const PAGES = [
-        'home' => 'Homepage (/exclusive)',
-        'stores' => 'Stores Directory (/exclusive/stores)',
-        'coupons' => 'Promo Codes (/exclusive/coupons)',
-        'blogs' => 'Blog Listing (/)',
+        'home' => 'Homepage',
+        'stores' => 'Stores Directory',
+        'coupons' => 'Promo Codes',
+        'blogs' => 'Blog Listing',
     ];
 
     /**

@@ -46,8 +46,22 @@ class ScriptInjection extends Model
     /**
      * Scope to scripts that should render for the given page type
      * (and, when a store is provided, scripts targeting that store).
+     *
+     * Deliberately NOT named `forPage` — Eloquent\Builder::paginate()
+     * internally calls `$this->forPage($page, $perPage)` for its
+     * LIMIT/OFFSET slicing, and since Eloquent\Builder itself has no real
+     * `forPage()` method (only the underlying Query\Builder does),
+     * `__call()` resolves it via `hasNamedScope()` BEFORE ever reaching the
+     * query builder — a local scope of that exact name silently hijacks
+     * every `->paginate()` call on this model, replacing the LIMIT/OFFSET
+     * with this scope's own WHERE clause instead (confirmed the hard way:
+     * admin's script-injections index was calling ->paginate(20), which
+     * became ->forPage('1', 20)->get() under the hood, filtering the list
+     * down to `is_active=true AND (target_type='all_pages' OR ...
+     * page_type='1' ... OR ... stores.id=20)` — dropping every
+     * specific_stores script whose store id isn't literally 20).
      */
-    public function scopeForPage($query, string $pageType, ?int $storeId = null)
+    public function scopeMatchingPage($query, string $pageType, ?int $storeId = null)
     {
         return $query->where('is_active', true)->where(function ($q) use ($pageType, $storeId) {
             $q->where('target_type', 'all_pages')

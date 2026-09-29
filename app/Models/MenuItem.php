@@ -39,8 +39,6 @@ class MenuItem extends Model
             return $this->url;
         }
 
-        $path = ltrim($this->url, '/');
-
-        return $path === '' ? '/'.$region->code : '/'.$region->code.'/'.$path;
+        return $region->publicUrl($this->url);
     }
 }

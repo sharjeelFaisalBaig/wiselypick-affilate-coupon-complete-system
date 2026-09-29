@@ -3,7 +3,7 @@
 @section('title', $blog->exists ? 'Edit Blog Post' : 'Add Blog Post')
 
 @push('head')
-    @vite(['resources/js/blog-editor.js', 'resources/js/slug-preview.js', 'resources/js/image-dimension-check.js', 'resources/js/blog-form.js'])
+    @vite(['resources/js/blog-editor.js', 'resources/js/blog-sections-builder.js', 'resources/js/slug-preview.js', 'resources/js/image-dimension-check.js', 'resources/js/blog-form.js'])
 @endpush
 
 @section('content')
@@ -42,18 +42,32 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Slug Prefix</label>
-                    <input type="text" name="route_prefix" value="{{ old('route_prefix', $blog->route_prefix) }}" placeholder="{{ \App\Models\Blog::DEFAULT_ROUTE_PREFIX }}"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="mt-1 text-xs text-gray-400">The path segment before the slug — e.g. "articles". Leave blank for the default "{{ \App\Models\Blog::DEFAULT_ROUTE_PREFIX }}".</p>
+                    <select id="blog_slug_prefix_id" name="blog_slug_prefix_id" data-select2-enable data-placeholder="— Default (none) —" @disabled(old('starts_from_root', $blog->starts_from_root)) class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— Default (none) —</option>
+                        @foreach ($blogSlugPrefixes as $blogSlugPrefix)
+                            <option value="{{ $blogSlugPrefix->id }}" @selected(old('blog_slug_prefix_id', $blog->blog_slug_prefix_id) == $blogSlugPrefix->id)>{{ $blogSlugPrefix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">The path segment before the slug — e.g. "articles". Manage options under Blog Slugs → Slug Prefixes.</p>
+                    <label class="mt-2 flex items-center gap-2">
+                        <input type="checkbox" name="starts_from_root" value="1" data-root-toggle data-disables="#blog_slug_prefix_id" @checked(old('starts_from_root', $blog->starts_from_root))
+                               class="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-sm text-gray-700">Start Slug from Root</span>
+                    </label>
+                    <p class="mt-1 text-xs text-gray-400">Drops the prefix entirely — the post's URL becomes /{{ $blog->slug ?: 'slug' }} (still under the region's own prefix, if any). Disables the Slug Prefix field above.</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Suffix</label>
-                    <input type="text" name="route_suffix" value="{{ old('route_suffix', $blog->route_suffix) }}" placeholder="optional"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="mt-1 text-xs text-gray-400">Optional trailing path segment after the slug.</p>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Slug Suffix</label>
+                    <select name="blog_slug_suffix_id" data-select2-enable data-placeholder="— None —" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— None —</option>
+                        @foreach ($blogSlugSuffixes as $blogSlugSuffix)
+                            <option value="{{ $blogSlugSuffix->id }}" @selected(old('blog_slug_suffix_id', $blog->blog_slug_suffix_id) == $blogSlugSuffix->id)>{{ $blogSlugSuffix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Optional trailing path segment after the slug. Manage options under Blog Slugs → Slug Suffixes.</p>
                 </div>
             </div>
 
@@ -64,10 +78,28 @@
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">Content</label>
-                <div data-quill-editor="content" style="min-height: 300px;" class="bg-white"></div>
-                <textarea name="content" data-content-field="content" class="hidden">{{ old('content', $blog->content) }}</textarea>
-                <p class="mt-1 text-xs text-gray-400">H2/H3 headings are automatically turned into the article's table of contents on save.</p>
+                <div class="mb-2 flex items-center justify-between">
+                    <label class="block text-sm font-medium text-gray-700">Blog Content Sections</label>
+                    <button type="button" data-section-add class="text-sm font-medium text-emerald-600 hover:text-emerald-700">+ Add Section</button>
+                </div>
+                <p class="mb-2 text-xs text-gray-400">Each section becomes its own Quick Link in the blog detail page's sidebar. H2/H3 headings inside a section are automatically anchored. At least one section is required.</p>
+                <div data-section-list class="space-y-4">
+                    @foreach (($blog->content_sections ?: [['title' => '', 'content' => '']]) as $i => $section)
+                        <div data-section-row data-section-key="section-{{ $i }}" class="rounded-md border border-gray-200 p-4">
+                            <div class="mb-3 flex items-center gap-2">
+                                <span data-section-drag-handle draggable="true" class="cursor-grab select-none text-gray-300 hover:text-gray-500" title="Drag to reorder">&#10021;</span>
+                                <input type="text" name="content_sections[{{ $i }}][title]" value="{{ old("content_sections.$i.title", $section['title'] ?? '') }}" data-section-title placeholder="Quick Link Title, e.g. Overview" required
+                                       class="block flex-1 rounded-md border-gray-300 text-sm font-medium shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                <button type="button" data-section-copy class="text-xs font-medium text-gray-500 hover:text-gray-700">Copy</button>
+                                <button type="button" data-section-remove class="text-xs font-medium text-red-600 hover:text-red-700">Remove</button>
+                            </div>
+                            <div data-quill-editor="section-{{ $i }}" style="min-height: 180px;" class="bg-white"></div>
+                            <textarea name="content_sections[{{ $i }}][content]" data-content-field="section-{{ $i }}" class="hidden">{{ old("content_sections.$i.content", $section['content'] ?? '') }}</textarea>
+                            @error("content_sections.$i.title") <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    @endforeach
+                </div>
+                @error('content_sections') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div>

@@ -21,7 +21,7 @@ class HomepageSectionSeeder extends Seeder
                 'title' => 'Trending Deals',
                 'content_type' => 'deal',
                 'cta_label' => 'Explore all',
-                'cta_url' => '/exclusive/coupons',
+                'cta_url' => '/coupons',
                 'sort_order' => ++$order,
                 'is_active' => true,
             ]);
@@ -32,7 +32,7 @@ class HomepageSectionSeeder extends Seeder
                 'title' => 'Top Coupons',
                 'content_type' => 'coupon',
                 'cta_label' => 'Show all',
-                'cta_url' => '/exclusive/coupons',
+                'cta_url' => '/coupons',
                 'sort_order' => ++$order,
                 'is_active' => true,
             ]);
@@ -43,7 +43,7 @@ class HomepageSectionSeeder extends Seeder
                 'title' => 'Trending Stores',
                 'content_type' => 'store',
                 'cta_label' => 'Browse stores',
-                'cta_url' => '/exclusive/stores',
+                'cta_url' => '/stores',
                 'sort_order' => ++$order,
                 'is_active' => true,
             ]);
@@ -61,7 +61,7 @@ class HomepageSectionSeeder extends Seeder
                 'title' => 'Top Performing Coupons',
                 'content_type' => 'ranked',
                 'cta_label' => 'View all',
-                'cta_url' => '/exclusive/coupons',
+                'cta_url' => '/coupons',
                 'sort_order' => ++$order,
                 'is_active' => true,
             ]);
@@ -72,7 +72,7 @@ class HomepageSectionSeeder extends Seeder
                 'title' => 'Top Categories',
                 'content_type' => 'categories',
                 'cta_label' => 'All categories',
-                'cta_url' => '/exclusive/stores',
+                'cta_url' => '/stores',
                 'sort_order' => ++$order,
                 'is_active' => true,
             ]);

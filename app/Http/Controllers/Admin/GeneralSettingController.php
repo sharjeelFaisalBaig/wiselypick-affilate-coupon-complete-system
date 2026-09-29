@@ -32,7 +32,10 @@ class GeneralSettingController extends Controller
             'footer_disclaimer' => ['nullable', 'string'],
             'store_page_disclaimer' => ['nullable', 'string'],
             'rights_text' => ['nullable', 'string', 'max:255'],
-            'logo' => ['nullable', 'image', 'max:512'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024', 'dimensions:width=160,height=40'],
+            'logo_link_page' => ['required', 'in:'.implode(',', array_keys(PageSettingController::PAGES))],
+            'logo_link_page_blog' => ['required', 'in:'.implode(',', array_keys(PageSettingController::PAGES))],
+            'contact_notification_emails' => ['nullable', 'string', 'max:2000', $this->eachLineIsAnEmail()],
             'primary_color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'deal_color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'dark_surface_color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
@@ -53,5 +56,28 @@ class GeneralSettingController extends Controller
         GeneralSetting::updateOrCreate(['region_id' => $region->id], $data);
 
         return redirect()->route('admin.general-settings.edit')->with('status', 'General settings updated.');
+    }
+
+    /**
+     * The Contact Us notification recipients field is a one-email-per-line
+     * textarea (see GeneralSetting::contactNotificationEmailList()) — every
+     * non-blank line must be a valid email address.
+     */
+    private function eachLineIsAnEmail(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            foreach (preg_split('/\r\n|\r|\n/', (string) $value) as $line) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+
+                if (! filter_var($line, FILTER_VALIDATE_EMAIL)) {
+                    $fail("Each line must be a valid email address — \"{$line}\" isn't.");
+
+                    return;
+                }
+            }
+        };
     }
 }

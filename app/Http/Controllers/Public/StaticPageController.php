@@ -10,14 +10,22 @@ use Illuminate\View\View;
 
 class StaticPageController extends Controller
 {
-    public function show(Region $region, string $pageSlug): View
+    /**
+     * $staticPage is already resolved by PageRouterController (via
+     * StaticPage::resolveByPath(), which is what actually matches its
+     * possibly-prefixed/suffixed path) — see Public\StoreController::show()'s
+     * equivalent docblock for why this takes the resolved model directly
+     * rather than a slug.
+     */
+    public function show(Region $region, StaticPage $staticPage): View
     {
-        $page = StaticPage::where('region_id', $region->id)->where('slug', $pageSlug)->where('is_active', true)->firstOrFail();
+        $page = $staticPage;
 
         $viewData = [
             'region' => $region,
             'pageType' => 'static_page',
             'page' => $page,
+            'currentPageScripts' => $page,
             'seoTitle' => $page->meta_title ?: $page->title,
             'seoDescription' => $page->meta_description,
             'ogTitle' => $page->og_title,
@@ -26,7 +34,7 @@ class StaticPageController extends Controller
             'robotsFollow' => $page->robots_follow,
         ];
 
-        if ($pageSlug === 'contact') {
+        if ($page->page_type === 'contact') {
             $viewData['agendas'] = ContactPageAgenda::where('region_id', $region->id)->where('is_active', true)
                 ->orderBy('sort_order')->get();
 

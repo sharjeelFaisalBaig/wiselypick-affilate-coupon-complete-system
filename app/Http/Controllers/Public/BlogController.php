@@ -18,7 +18,8 @@ class BlogController extends Controller
 
         $blogs = Blog::where('region_id', $region->id)->where('is_published', true)
             ->where('title', 'like', "%{$q}%")
-            ->limit(8)->get(['slug', 'title']);
+            ->with(['blogSlugPrefix', 'blogSlugSuffix'])
+            ->limit(8)->get(['id', 'slug', 'title', 'blog_slug_prefix_id', 'blog_slug_suffix_id']);
 
         return response()->json($blogs->map(fn ($blog) => [
             'label' => $blog->title,
@@ -28,12 +29,13 @@ class BlogController extends Controller
 
     public function index(Request $request, Region $region): View
     {
-        $query = Blog::where('region_id', $region->id)->where('is_published', true)->with('blogCategory');
+        $query = Blog::where('region_id', $region->id)->where('is_published', true)
+            ->with(['blogCategory', 'blogSlugPrefix', 'blogSlugSuffix']);
 
         if ($request->filled('q')) {
             $search = $request->string('q')->value();
             $query->where(fn ($q) => $q->where('title', 'like', "%{$search}%")
-                ->orWhere('content', 'like', "%{$search}%")
+                ->orWhere('content_sections', 'like', "%{$search}%")
                 ->orWhereHas('blogCategory', fn ($cq) => $cq->where('name', 'like', "%{$search}%")));
         }
 
@@ -41,10 +43,14 @@ class BlogController extends Controller
             $query->whereHas('blogCategory', fn ($q) => $q->where('slug', $request->string('category')));
         }
 
-        $featured = (clone $query)->orderByDesc('published_at')->first();
+        // The admin's own drag-and-drop order (Blog::sort_order) is the
+        // single source of truth for both the Featured pick and the grid
+        // below it — not publish date — so reordering in the admin is what
+        // actually controls what shoppers see first.
+        $featured = (clone $query)->orderBy('sort_order')->first();
 
         $blogs = $query->when($featured, fn ($q) => $q->where('id', '!=', $featured->id))
-            ->orderByDesc('published_at')
+            ->orderBy('sort_order')
             ->paginate(12)
             ->withQueryString();
 
@@ -54,6 +60,7 @@ class BlogController extends Controller
         return view('public.blogs', [
             'region' => $region,
             'pageType' => 'blog_listing',
+            'currentPageScripts' => $settings,
             'featured' => $request->filled('q') || $request->filled('category') ? null : $featured,
             'blogs' => $blogs,
             'categories' => $categories,
@@ -74,7 +81,7 @@ class BlogController extends Controller
      */
     public function show(Request $request, Region $region, Blog $blog): View
     {
-        $blog->load(['blogCategory', 'relatedBlogs']);
+        $blog->load(['blogCategory', 'relatedBlogs.blogSlugPrefix', 'relatedBlogs.blogSlugSuffix']);
 
         // Auto-link on: same-category posts, most-recently-updated first.
         // Auto-link off: the admin's own hand-picked, hand-ordered list.
@@ -82,6 +89,7 @@ class BlogController extends Controller
             ? Blog::where('region_id', $region->id)->where('is_published', true)
                 ->where('id', '!=', $blog->id)
                 ->when($blog->blog_category_id, fn ($q) => $q->where('blog_category_id', $blog->blog_category_id))
+                ->with(['blogSlugPrefix', 'blogSlugSuffix'])
                 ->orderByDesc('updated_at')
                 ->limit(5)
                 ->get()

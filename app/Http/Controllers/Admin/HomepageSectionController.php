@@ -66,8 +66,14 @@ class HomepageSectionController extends Controller
 
         return view('admin.homepage-sections.form', [
             'section' => $homepageSection,
-            'selectedOffers' => $homepageSection->offers()->with('store')->get(),
-            'selectedStores' => $homepageSection->stores,
+            // A store/offer dropped to Pending (or deactivated/expired)
+            // since being picked is left out here — the admin sees it's no
+            // longer part of this section's live selection, and the next
+            // save persists that (syncSelections() only re-attaches what's
+            // still rendered as picked).
+            'selectedOffers' => $homepageSection->offers()->with('store')->where('offers.is_active', true)
+                ->whereHas('store', fn ($q) => $q->visible())->get(),
+            'selectedStores' => $homepageSection->stores()->visible()->get(),
             'selectedCategories' => $homepageSection->categories,
             ...$this->pickerOptions($homepageSection->region_id, $request),
         ]);
@@ -192,7 +198,7 @@ class HomepageSectionController extends Controller
         abort_unless(in_array($type, ['coupon', 'deal', 'store', 'mixed', 'ranked', 'categories'], true), 422);
 
         if ($type === 'store') {
-            $query = Store::where('region_id', $region->id)->where('is_active', true);
+            $query = Store::where('region_id', $region->id)->visible();
 
             if ($request->filled('filter_category_id')) {
                 $query->where('category_id', $request->integer('filter_category_id'));
@@ -228,7 +234,10 @@ class HomepageSectionController extends Controller
 
         $query = Offer::with('store')->where('is_active', true)
             ->when(! in_array($type, ['mixed', 'ranked'], true), fn ($q) => $q->where('offer_type', $type))
-            ->whereHas('store', fn ($q) => $q->where('region_id', $region->id));
+            // Excludes offers whose OWN store has since gone Pending/inactive
+            // — an offer can stay is_active=true on its own row while its
+            // store is the thing that actually got deactivated.
+            ->whereHas('store', fn ($q) => $q->where('region_id', $region->id)->visible());
 
         if ($request->filled('filter_store_id')) {
             $query->where('store_id', $request->integer('filter_store_id'));

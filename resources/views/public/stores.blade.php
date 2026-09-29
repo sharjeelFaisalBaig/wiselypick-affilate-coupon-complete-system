@@ -22,7 +22,7 @@
                 <div>
                     <label class="mb-1 block text-xs font-medium text-gray-500">Search</label>
                     <input type="search" name="q" value="{{ request('q') }}" placeholder="Search for a store..." autocomplete="off"
-                           data-autosuggest-endpoint="{{ route('public.suggest.stores', $region->code) }}"
+                           data-autosuggest-endpoint="{{ $region->publicUrl('suggest/stores') }}"
                            class="rounded-md border-gray-300 py-2.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 </div>
                 <div class="flex flex-col justify-end">

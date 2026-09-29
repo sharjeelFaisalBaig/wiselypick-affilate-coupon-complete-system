@@ -12,7 +12,7 @@
     // color included) rather than a hardcoded literal.
     $badgeItems = $offer->badges->sortBy(fn ($b) => $b->name === 'Verified' ? 0 : 1)->values();
     $isCoupon = $offer->isCoupon();
-    $redirectUrl = route('public.offer.redirect', [$region->code, $offer]);
+    $redirectUrl = $region->publicUrl('go/'.$offer->id);
     $accent = $isCoupon ? 'from-emerald-500 to-teal-500' : 'from-deal-500 to-deal-700';
     $ctaClasses = $isCoupon
         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/30'

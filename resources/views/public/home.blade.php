@@ -19,7 +19,7 @@
 
             <form action="{{ \App\Models\PageSetting::urlFor($region, 'coupons') }}" method="GET" class="animate-fade-up mx-auto mt-6 flex max-w-xl gap-2">
                 <input type="search" name="q" placeholder="{{ $heroSearchPlaceholder }}" autocomplete="off"
-                       data-autosuggest-endpoint="{{ route('public.suggest.coupons', $region->code) }}"
+                       data-autosuggest-endpoint="{{ $region->publicUrl('suggest/coupons') }}"
                        class="w-full rounded-full border-0 bg-white px-5 py-3 text-sm text-gray-900 shadow-lg transition-shadow duration-200 focus:outline-none focus:ring-4 focus:ring-white/50">
                 <button type="submit" class="btn-shine shrink-0 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0">
                     {{ $heroSearchButtonText }}

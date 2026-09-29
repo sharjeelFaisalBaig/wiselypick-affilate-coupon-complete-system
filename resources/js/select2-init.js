@@ -51,7 +51,10 @@ function initSelect2() {
         $el.select2({
             width: '100%',
             placeholder: $el.data('placeholder') || 'Select...',
-            allowClear: !$el.prop('multiple') && !$el.prop('required'),
+            // The "×" clear button is disabled everywhere per product
+            // decision — every clearable select already has an explicit
+            // empty/"All ..." option to reselect instead.
+            allowClear: false,
             ...(hasFlags && {
                 templateResult: formatOptionWithFlag,
                 templateSelection: formatOptionWithFlag,

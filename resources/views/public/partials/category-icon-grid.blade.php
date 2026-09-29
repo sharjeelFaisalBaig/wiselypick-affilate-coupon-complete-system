@@ -4,7 +4,7 @@
 --}}
 <div data-reveal-group class="grid grid-cols-2 gap-4 sm:grid-cols-3">
     @foreach ($categories as $category)
-        <a data-reveal href="{{ route('public.category', [$region->code, $category->slug]) }}"
+        <a data-reveal href="{{ $region->publicUrl('category/'.$category->slug) }}"
            class="card-lift group flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 text-center shadow-sm hover:border-transparent">
             <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-50 text-emerald-600 transition-transform duration-300 group-hover:scale-110">
                 @if ($category->icon_path)

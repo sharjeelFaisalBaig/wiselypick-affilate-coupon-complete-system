@@ -14,18 +14,32 @@
                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
             </div>
 
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" name="email" value="{{ old('email', $user->email) }}" required maxlength="255"
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-            </div>
+            @if ($user->isSuperadmin())
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required maxlength="255"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                </div>
+            @else
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                    <p class="text-sm text-gray-500">{{ $user->email }} <span class="text-xs text-gray-400">(only a Superadmin can change this)</span></p>
+                </div>
+            @endif
 
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">New Password</label>
-                <input type="password" name="password" autocomplete="new-password" placeholder="Leave blank to keep current password"
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                <p class="mt-1 text-xs text-gray-400">Minimum 8 characters.</p>
-            </div>
+            @if ($user->isSuperadmin())
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" name="password" autocomplete="new-password" placeholder="Leave blank to keep current password"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <p class="mt-1 text-xs text-gray-400">Minimum 8 characters.</p>
+                </div>
+            @else
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                    <p class="text-sm text-gray-500">Only a Superadmin can change your password — ask one to update it from the Users screen.</p>
+                </div>
+            @endif
 
             <div>
                 <label class="mb-1 block text-sm font-medium text-gray-700">Role</label>

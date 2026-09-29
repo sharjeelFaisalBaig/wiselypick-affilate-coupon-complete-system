@@ -1,21 +1,24 @@
 {{--
-    "Deals Section" card per the SRS: thumbnail, used count, up to 3 badges,
-    expiry date, deal title. The whole card — including the thumbnail — is
-    one uniform click target: same-tab redirect + a new tab showing the
-    offer modal (which renders "No Code Required" here since deals never
-    have a code) — via data-deal-cta / initOfferCta() in app.js. The
-    thumbnail deliberately does NOT link to the store page (it used to,
-    which made clicking it behave differently from the rest of the card).
+    Homepage "Deals"/"Coupons Per Category" section card per the SRS:
+    thumbnail, used count, up to 3 badges, expiry date, offer title. The
+    whole card — including the thumbnail — is one uniform click target:
+    same-tab redirect + a new tab showing the offer modal (code + copy
+    button for a coupon, "No Code Required" for a deal) — via
+    data-coupon-cta/data-deal-cta / initOfferCta() in app.js. The thumbnail
+    deliberately does NOT link to the store page (it used to, which made
+    clicking it behave differently from the rest of the card).
     Expects $offer (with store loaded) and $region.
 --}}
 @php
     $store = $offer->store;
     $thumbnailPath = $store->logo_path;
-    $redirectUrl = route('public.offer.redirect', [$region->code, $offer]);
+    $redirectUrl = $region->publicUrl('go/'.$offer->id);
+    $isCoupon = $offer->isCoupon();
+    $accent = $isCoupon ? 'from-emerald-500 to-teal-500' : 'from-deal-500 to-deal-700';
 @endphp
 <div data-reveal class="card-lift group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm hover:border-transparent"
-     data-deal-cta data-offer-id="{{ $offer->id }}" data-redirect-url="{{ $redirectUrl }}">
-    <div class="h-1.5 shrink-0 bg-gradient-to-r from-deal-500 to-deal-700"></div>
+     @if ($isCoupon) data-coupon-cta @else data-deal-cta @endif data-offer-id="{{ $offer->id }}" data-redirect-url="{{ $redirectUrl }}">
+    <div class="h-1.5 shrink-0 bg-gradient-to-r {{ $accent }}"></div>
     <div class="flex h-44 items-center justify-center overflow-hidden border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6">
         @if ($thumbnailPath)
             <img src="{{ Storage::url($thumbnailPath) }}" alt="{{ $store->name }}" width="160" height="80" loading="lazy" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-110">

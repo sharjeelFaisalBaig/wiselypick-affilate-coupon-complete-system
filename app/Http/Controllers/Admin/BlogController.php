@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Concerns\GuardsRegionOwnership;
+use App\Http\Controllers\Admin\Concerns\ValidatesAbsoluteUrlConflicts;
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use App\Models\BlogCategory;
+use App\Models\BlogSlugPrefix;
+use App\Models\BlogSlugSuffix;
 use App\Models\Region;
 use App\Support\BlogContentProcessor;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +22,7 @@ use Illuminate\View\View;
 class BlogController extends Controller
 {
     use GuardsRegionOwnership;
+    use ValidatesAbsoluteUrlConflicts;
 
     public function index(Request $request): View
     {
@@ -40,6 +44,8 @@ class BlogController extends Controller
             'blogCategories' => BlogCategory::where('region_id', $region->id)->orderBy('name')->get(),
             'otherBlogs' => Blog::where('region_id', $region->id)->orderBy('title')->get(),
             'selectedRelatedBlogs' => [],
+            'blogSlugPrefixes' => BlogSlugPrefix::where('region_id', $region->id)->where('is_active', true)->orderBy('value')->get(),
+            'blogSlugSuffixes' => BlogSlugSuffix::where('region_id', $region->id)->where('is_active', true)->orderBy('value')->get(),
         ]);
     }
 
@@ -52,6 +58,8 @@ class BlogController extends Controller
         $data['region_id'] = $region->id;
         $data['slug'] = $data['slug'] ?: $this->uniqueSlug($data['title'], $region->id);
         $data['sort_order'] = (Blog::where('region_id', $region->id)->max('sort_order') ?? 0) + 1;
+
+        $this->guardAgainstUrlConflict($this->prospectiveUrl($data, $region), 'blog', null);
 
         if ($request->hasFile('featured_image')) {
             $data['featured_image'] = $request->file('featured_image')->store('blogs', 'public');
@@ -72,6 +80,8 @@ class BlogController extends Controller
             'blogCategories' => BlogCategory::where('region_id', $blog->region_id)->orderBy('name')->get(),
             'otherBlogs' => Blog::where('region_id', $blog->region_id)->where('id', '!=', $blog->id)->orderBy('title')->get(),
             'selectedRelatedBlogs' => $blog->relatedBlogs->pluck('id')->all(),
+            'blogSlugPrefixes' => BlogSlugPrefix::where('region_id', $blog->region_id)->where('is_active', true)->orderBy('value')->get(),
+            'blogSlugSuffixes' => BlogSlugSuffix::where('region_id', $blog->region_id)->where('is_active', true)->orderBy('value')->get(),
         ]);
     }
 
@@ -87,6 +97,11 @@ class BlogController extends Controller
         } else {
             unset($data['slug']);
         }
+
+        $this->guardAgainstUrlConflict(
+            $this->prospectiveUrl($data + ['slug' => $data['slug'] ?? $blog->slug], $blog->region),
+            'blog', $blog->id
+        );
 
         if ($request->hasFile('featured_image')) {
             if ($blog->featured_image) {
@@ -128,22 +143,17 @@ class BlogController extends Controller
         return response()->noContent();
     }
 
-    /** See Admin\StoreController::notReservedPrefix() for the rationale. */
-    private function notReservedPrefix(): \Closure
+    /** See Admin\StoreController::prospectiveUrl() for the rationale. */
+    private function prospectiveUrl(array $data, Region $region): string
     {
-        return function (string $attribute, mixed $value, \Closure $fail) {
-            if (! $value) {
-                return;
-            }
+        $prospective = new Blog([
+            'slug' => $data['slug'],
+            'blog_slug_prefix_id' => $data['blog_slug_prefix_id'] ?? null,
+            'blog_slug_suffix_id' => $data['blog_slug_suffix_id'] ?? null,
+            'starts_from_root' => $data['starts_from_root'] ?? false,
+        ]);
 
-            $segments = explode('/', strtolower(trim($value, '/')));
-            if (in_array($segments[0], ['p', 'suggest', 'go', 'contact'], true)) {
-                $fail("The prefix can't start with \"{$segments[0]}\" — that path is already used elsewhere on the site.");
-            }
-            if (($segments[0] ?? null) === 'exclusive' && ($segments[1] ?? null) === 'category') {
-                $fail('The prefix can\'t be "exclusive/category" — that path is already used elsewhere on the site.');
-            }
-        };
+        return $prospective->urlFor($region);
     }
 
     /** See Admin\StoreController::uniqueSlug() for the rationale. */
@@ -187,10 +197,12 @@ class BlogController extends Controller
                 'nullable', 'string', 'max:255', 'alpha_dash',
                 Rule::unique('blogs', 'slug')->where('region_id', $region->id)->ignore($blog),
             ],
-            'route_prefix' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+(\/[a-z0-9-]+)*$/', $this->notReservedPrefix()],
-            'route_suffix' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+(\/[a-z0-9-]+)*$/'],
+            'blog_slug_prefix_id' => ['nullable', Rule::exists('blog_slug_prefixes', 'id')->where('region_id', $region->id)],
+            'blog_slug_suffix_id' => ['nullable', Rule::exists('blog_slug_suffixes', 'id')->where('region_id', $region->id)],
             'excerpt' => ['nullable', 'string', 'max:500'],
-            'content' => ['required', 'string'],
+            'content_sections' => ['required', 'array', 'min:1'],
+            'content_sections.*.title' => ['required', 'string', 'max:255'],
+            'content_sections.*.content' => ['required', 'string'],
             'featured_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048', 'dimensions:width=670,height=300'],
             'author_name' => ['nullable', 'string', 'max:255'],
             'published_at' => ['nullable', 'date'],
@@ -203,15 +215,23 @@ class BlogController extends Controller
             'faqs.*.answer' => ['nullable', 'string'],
         ]);
 
-        $processed = BlogContentProcessor::extractToc($data['content']);
-        $data['content'] = $processed['content'];
+        $processed = BlogContentProcessor::processSections($data['content_sections']);
+        $data['content_sections'] = $processed['sections'];
         $data['toc'] = $processed['toc'];
-        $data['reading_time_minutes'] = BlogContentProcessor::estimateReadingTimeMinutes($processed['content']);
+        $data['reading_time_minutes'] = BlogContentProcessor::estimateReadingTimeMinutes(
+            collect($processed['sections'])->pluck('content')->implode('')
+        );
 
         $data['faqs'] = collect($data['faqs'] ?? [])
             ->filter(fn ($faq) => filled($faq['question'] ?? null) && filled($faq['answer'] ?? null))
             ->values()
             ->all();
+
+        $data['starts_from_root'] = $request->boolean('starts_from_root');
+        // See Admin\StoreController::validated() for the rationale.
+        if ($data['starts_from_root']) {
+            $data['blog_slug_prefix_id'] = null;
+        }
 
         $data['is_published'] = $request->boolean('is_published');
         $data['robots_index'] = $request->boolean('robots_index');

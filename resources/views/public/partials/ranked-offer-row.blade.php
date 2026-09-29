@@ -5,7 +5,7 @@
 @php
     $store = $offer->store;
     $isCoupon = $offer->isCoupon();
-    $redirectUrl = route('public.offer.redirect', [$region->code, $offer]);
+    $redirectUrl = $region->publicUrl('go/'.$offer->id);
     $badgeItems = $offer->badges->sortBy(fn ($b) => $b->name === 'Verified' ? 0 : 1)->values();
     $accent = $isCoupon
         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/30'

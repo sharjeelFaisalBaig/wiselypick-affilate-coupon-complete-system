@@ -35,9 +35,10 @@
                 @if ($category->icon_path)
                     <img data-live-preview src="{{ Storage::url($category->icon_path) }}" alt="" width="40" height="40" class="mb-2 h-10 w-10 rounded border border-gray-200 object-contain">
                 @endif
-                <input type="file" name="icon_image" accept="image/*"
+                <input type="file" name="icon_image" accept="image/*" data-required-width="500" data-required-height="500"
                        class="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200">
-                <p class="mt-1 text-xs text-gray-400">* Optimal size: 64x64px.</p>
+                <p class="mt-1 text-xs text-gray-400">* Required dimensions: exactly 500x500px. JPG, PNG or WEBP, up to 1MB.</p>
+                <p data-dimension-check-result class="mt-1 text-xs"></p>
                 @error('icon_image') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 @if ($category->icon && ! $category->icon_path)
                     <p class="mt-1 text-xs text-gray-400">Currently using legacy icon value: "{{ $category->icon }}"</p>

@@ -108,7 +108,7 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">CTA Link (relative URL)</label>
                     <input type="text" name="cta_url" value="{{ old('cta_url', $section->cta_url) }}"
-                           placeholder="/exclusive or /exclusive/stores"
+                           placeholder="/coupons or /stores"
                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                 </div>
                 <div>

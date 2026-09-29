@@ -17,7 +17,16 @@ function syncHomepageSectionForm(form) {
     const sync = () => {
         const selected = typeInputs.find((el) => el.checked)?.value;
         Object.entries(wrappers).forEach(([key, el]) => {
-            if (el) el.classList.toggle('hidden', key !== selected);
+            if (!el) return;
+            const isActive = key === selected;
+            el.classList.toggle('hidden', !isActive);
+            // Inactive pickers share the same field name (offer_ids[]) as the
+            // active one, so their leftover hidden inputs must be disabled —
+            // disabled fields are excluded from form submission — or they'd
+            // pad the submitted array past the max:5 validation limit.
+            el.querySelectorAll('input').forEach((input) => {
+                input.disabled = !isActive;
+            });
         });
     };
 

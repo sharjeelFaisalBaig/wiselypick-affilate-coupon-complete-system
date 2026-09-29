@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') · Coupons Platform Admin</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/drag-sort.js', 'resources/js/offer-form.js', 'resources/js/script-injection-form.js', 'resources/js/faq-builder.js', 'resources/js/homepage-section-form.js', 'resources/js/homepage-section-picker.js', 'resources/js/ajax-filters.js', 'resources/js/autosuggest.js', 'resources/js/table-row-filter.js', 'resources/js/select2-init.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/drag-sort.js', 'resources/js/offer-form.js', 'resources/js/script-injection-form.js', 'resources/js/faq-builder.js', 'resources/js/homepage-section-form.js', 'resources/js/homepage-section-picker.js', 'resources/js/ajax-filters.js', 'resources/js/autosuggest.js', 'resources/js/table-row-filter.js', 'resources/js/select2-init.js', 'resources/js/slug-root-toggle.js'])
     @stack('head')
 </head>
 <body data-admin-shell class="text-gray-900 antialiased">
@@ -46,16 +46,16 @@
                         [
                             'label' => 'Stores',
                             'items' => [
-                                ['label' => 'Add Store', 'route' => 'admin.stores.create', 'match' => 'admin.stores.create', 'can' => 'manage-stores-coupons'],
-                                ['label' => 'All Stores', 'route' => 'admin.stores.index', 'match' => ['admin.stores.index', 'admin.stores.edit'], 'can' => 'manage-stores-coupons'],
-                                ['label' => 'Featured & Popular', 'route' => 'admin.stores.classification', 'match' => 'admin.stores.classification', 'can' => 'manage-stores-coupons'],
+                                ['label' => 'Add Store', 'route' => 'admin.stores.create', 'match' => 'admin.stores.create', 'can' => 'manage-stores'],
+                                ['label' => 'All Stores', 'route' => 'admin.stores.index', 'match' => ['admin.stores.index', 'admin.stores.edit'], 'can' => 'manage-stores'],
+                                ['label' => 'Featured & Popular', 'route' => 'admin.stores.classification', 'match' => 'admin.stores.classification', 'can' => 'manage-stores'],
                             ],
                         ],
                         [
                             'label' => 'Coupons',
                             'items' => [
-                                ['label' => 'Add Coupon', 'route' => 'admin.offers.create', 'match' => 'admin.offers.create', 'can' => 'manage-stores-coupons'],
-                                ['label' => 'All Coupons', 'route' => 'admin.offers.index', 'match' => ['admin.offers.index', 'admin.offers.edit'], 'can' => 'manage-stores-coupons'],
+                                ['label' => 'Add Coupon', 'route' => 'admin.offers.create', 'match' => 'admin.offers.create', 'can' => 'manage-coupons'],
+                                ['label' => 'All Coupons', 'route' => 'admin.offers.index', 'match' => ['admin.offers.index', 'admin.offers.edit'], 'can' => 'manage-coupons'],
                             ],
                         ],
                         [
@@ -73,6 +73,15 @@
                             ],
                         ],
                         [
+                            'label' => 'Store Slugs',
+                            'items' => [
+                                ['label' => 'Add Slug Prefix', 'route' => 'admin.store-slug-prefixes.create', 'match' => 'admin.store-slug-prefixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Prefixes', 'route' => 'admin.store-slug-prefixes.index', 'match' => ['admin.store-slug-prefixes.index', 'admin.store-slug-prefixes.edit'], 'can' => 'full-admin-access'],
+                                ['label' => 'Add Slug Suffix', 'route' => 'admin.store-slug-suffixes.create', 'match' => 'admin.store-slug-suffixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Suffixes', 'route' => 'admin.store-slug-suffixes.index', 'match' => ['admin.store-slug-suffixes.index', 'admin.store-slug-suffixes.edit'], 'can' => 'full-admin-access'],
+                            ],
+                        ],
+                        [
                             'label' => 'Pages',
                             'items' => [
                                 // The ONLY entry point for page management — Homepage
@@ -84,11 +93,29 @@
                             ],
                         ],
                         [
+                            'label' => 'Page Slugs',
+                            'items' => [
+                                ['label' => 'Add Slug Prefix', 'route' => 'admin.page-slug-prefixes.create', 'match' => 'admin.page-slug-prefixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Prefixes', 'route' => 'admin.page-slug-prefixes.index', 'match' => ['admin.page-slug-prefixes.index', 'admin.page-slug-prefixes.edit'], 'can' => 'full-admin-access'],
+                                ['label' => 'Add Slug Suffix', 'route' => 'admin.page-slug-suffixes.create', 'match' => 'admin.page-slug-suffixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Suffixes', 'route' => 'admin.page-slug-suffixes.index', 'match' => ['admin.page-slug-suffixes.index', 'admin.page-slug-suffixes.edit'], 'can' => 'full-admin-access'],
+                            ],
+                        ],
+                        [
                             'label' => 'Blogs',
                             'items' => [
                                 ['label' => 'Blog Categories', 'route' => 'admin.blog-categories.index', 'match' => 'admin.blog-categories.*', 'can' => 'manage-blogs'],
                                 ['label' => 'Add Blog', 'route' => 'admin.blogs.create', 'match' => 'admin.blogs.create', 'can' => 'manage-blogs'],
                                 ['label' => 'All Blogs', 'route' => 'admin.blogs.index', 'match' => ['admin.blogs.index', 'admin.blogs.edit'], 'can' => 'manage-blogs'],
+                            ],
+                        ],
+                        [
+                            'label' => 'Blog Slugs',
+                            'items' => [
+                                ['label' => 'Add Slug Prefix', 'route' => 'admin.blog-slug-prefixes.create', 'match' => 'admin.blog-slug-prefixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Prefixes', 'route' => 'admin.blog-slug-prefixes.index', 'match' => ['admin.blog-slug-prefixes.index', 'admin.blog-slug-prefixes.edit'], 'can' => 'full-admin-access'],
+                                ['label' => 'Add Slug Suffix', 'route' => 'admin.blog-slug-suffixes.create', 'match' => 'admin.blog-slug-suffixes.create', 'can' => 'full-admin-access'],
+                                ['label' => 'All Slug Suffixes', 'route' => 'admin.blog-slug-suffixes.index', 'match' => ['admin.blog-slug-suffixes.index', 'admin.blog-slug-suffixes.edit'], 'can' => 'full-admin-access'],
                             ],
                         ],
                         [
@@ -190,7 +217,7 @@
                     @if(isset($allRegions) && isset($activeRegion))
                         <form method="POST" action="{{ route('admin.region.switch') }}" class="w-32 sm:w-56">
                             @csrf
-                            <select name="region_id" data-select2-enable data-auto-submit
+                            <select name="region_id" data-select2-enable data-auto-submit required
                                     class="w-full rounded-md border-gray-300 text-xs focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm">
                                 @foreach ($allRegions as $r)
                                     <option value="{{ $r->id }}" @selected($activeRegion->id === $r->id)

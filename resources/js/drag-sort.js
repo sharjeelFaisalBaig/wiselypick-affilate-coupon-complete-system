@@ -30,6 +30,15 @@ function initSortable(container) {
         });
     });
 
+    // Native HTML5 DnD only fires 'drop' on a target if some 'dragover'
+    // listener up the tree called preventDefault() for that exact pointer
+    // position. Each row's own dragover handler covers the area directly
+    // over rows, but the gaps around/below them (short tables, padding,
+    // the space below the last row) were uncovered — dropping there
+    // silently cancelled the whole reorder with no feedback, reading as
+    // "sorting doesn't work" for drops that didn't land exactly on a row.
+    container.addEventListener('dragover', (event) => event.preventDefault());
+
     container.addEventListener('drop', async (event) => {
         event.preventDefault();
         if (!url) return;
@@ -59,6 +68,17 @@ function initSortable(container) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-sortable]').forEach(initSortable);
-});
+// Exposed so ajax-filters.js can re-run it scoped to just-swapped-in content
+// — a [data-sortable] container injected by an AJAX filter/search/pagination
+// swap otherwise never gets its drag handlers attached at all (found via a
+// real repro: reordering silently stopped working on the admin Coupons
+// listing after using its search box, and stayed broken — even navigating
+// back from Add/Edit — until a hard reload re-ran DOMContentLoaded). Same
+// gap, and same fix shape, as scroll-reveal.js's window.initScrollReveal.
+function initDragSort(root = document) {
+    root.querySelectorAll('[data-sortable]').forEach(initSortable);
+}
+
+window.initDragSort = initDragSort;
+
+document.addEventListener('DOMContentLoaded', () => initDragSort(document));

@@ -96,15 +96,14 @@ class Menu extends Model
         self::ensureFixedMenusExist($region, self::SCOPE_BLOG);
 
         self::seedItems($region, self::SCOPE_GLOBAL, self::SLOT_HEADER, [
-            ['title' => 'Home', 'url' => '/exclusive'],
             ['title' => 'Promo Codes', 'url' => '/exclusive/coupons'],
             ['title' => 'Stores', 'url' => '/exclusive/stores'],
             ['title' => 'Blog', 'url' => '/'],
         ]);
         self::seedItems($region, self::SCOPE_GLOBAL, self::SLOT_FOOTER_ABOUT, [
-            ['title' => 'Contact Us', 'url' => '/p/contact'],
-            ['title' => 'Terms of Use', 'url' => '/p/terms-of-use'],
-            ['title' => 'Privacy Policy', 'url' => '/p/privacy-policy'],
+            ['title' => 'Contact Us', 'url' => '/contact-us'],
+            ['title' => 'Terms of Use', 'url' => '/terms-conditions'],
+            ['title' => 'Privacy Policy', 'url' => '/privacy-policy'],
         ]);
         self::seedItems($region, self::SCOPE_GLOBAL, self::SLOT_FOOTER_CONNECT, [
             ['title' => 'Blog', 'url' => '/', 'target' => 'same_tab'],
@@ -122,9 +121,9 @@ class Menu extends Model
             ['title' => 'Blog Home', 'url' => '/'],
         ]);
         self::seedItems($region, self::SCOPE_BLOG, self::SLOT_FOOTER_ABOUT, [
-            ['title' => 'Contact Us', 'url' => '/p/contact'],
-            ['title' => 'Terms of Use', 'url' => '/p/terms-of-use'],
-            ['title' => 'Privacy Policy', 'url' => '/p/privacy-policy'],
+            ['title' => 'Contact Us', 'url' => '/contact-us'],
+            ['title' => 'Terms of Use', 'url' => '/terms-conditions'],
+            ['title' => 'Privacy Policy', 'url' => '/privacy-policy'],
         ]);
         self::seedItems($region, self::SCOPE_BLOG, self::SLOT_FOOTER_CONNECT, [
             ['title' => 'Twitter', 'url' => '#', 'target' => 'new_tab'],

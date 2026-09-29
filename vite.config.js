@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/js/offer-form.js',
                 'resources/js/script-injection-form.js',
                 'resources/js/blog-editor.js',
+                'resources/js/blog-sections-builder.js',
                 'resources/js/faq-builder.js',
                 'resources/js/homepage-section-form.js',
                 'resources/js/homepage-section-picker.js',
@@ -25,6 +26,8 @@ export default defineConfig({
                 'resources/js/select2-init.js',
                 'resources/js/autosuggest.js',
                 'resources/js/scroll-reveal.js',
+                'resources/js/region-copy.js',
+                'resources/js/slug-root-toggle.js',
             ],
             refresh: true,
             fonts: [

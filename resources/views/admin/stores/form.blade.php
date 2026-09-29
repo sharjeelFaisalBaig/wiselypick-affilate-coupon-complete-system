@@ -31,15 +31,29 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Slug Prefix</label>
-                    <input type="text" name="route_prefix" value="{{ old('route_prefix', $store->route_prefix) }}" placeholder="{{ \App\Models\Store::DEFAULT_ROUTE_PREFIX }}"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="mt-1 text-xs text-gray-400">The path segment before the slug — e.g. "promotions" for /promotions/{{ $store->slug ?: 'slug' }}. Leave blank for the default "{{ \App\Models\Store::DEFAULT_ROUTE_PREFIX }}".</p>
+                    <select id="store_slug_prefix_id" name="store_slug_prefix_id" data-select2-enable data-placeholder="— Default ({{ \App\Models\Store::DEFAULT_ROUTE_PREFIX }}) —" @disabled(old('starts_from_root', $store->starts_from_root)) class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— Default ({{ \App\Models\Store::DEFAULT_ROUTE_PREFIX }}) —</option>
+                        @foreach ($storeSlugPrefixes as $storeSlugPrefix)
+                            <option value="{{ $storeSlugPrefix->id }}" @selected(old('store_slug_prefix_id', $store->store_slug_prefix_id) == $storeSlugPrefix->id)>{{ $storeSlugPrefix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">The path segment before the slug — e.g. "promotions" for /promotions/{{ $store->slug ?: 'slug' }}. Manage options under Store Slugs → Slug Prefixes.</p>
+                    <label class="mt-2 flex items-center gap-2">
+                        <input type="checkbox" name="starts_from_root" value="1" data-root-toggle data-disables="#store_slug_prefix_id" @checked(old('starts_from_root', $store->starts_from_root))
+                               class="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-sm text-gray-700">Start Slug from Root</span>
+                    </label>
+                    <p class="mt-1 text-xs text-gray-400">Drops the prefix entirely — the store's URL becomes /{{ $store->slug ?: 'slug' }} (still under the region's own prefix, if any). Disables the Slug Prefix field above.</p>
                 </div>
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Suffix</label>
-                    <input type="text" name="route_suffix" value="{{ old('route_suffix', $store->route_suffix) }}" placeholder="e.g. best-deals"
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p class="mt-1 text-xs text-gray-400">Optional trailing path segment after the slug.</p>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Slug Suffix</label>
+                    <select name="store_slug_suffix_id" data-select2-enable data-placeholder="— None —" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <option value="">— None —</option>
+                        @foreach ($storeSlugSuffixes as $storeSlugSuffix)
+                            <option value="{{ $storeSlugSuffix->id }}" @selected(old('store_slug_suffix_id', $store->store_slug_suffix_id) == $storeSlugSuffix->id)>{{ $storeSlugSuffix->value }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Optional trailing path segment after the slug. Manage options under Store Slugs → Slug Suffixes.</p>
                 </div>
             </div>
 
@@ -93,10 +107,18 @@
                     @error('affiliate_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date" name="start_date" value="{{ old('start_date', optional($store->start_date)->format('Y-m-d')) }}"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                    <p class="mt-1 text-xs text-gray-400">Optional.</p>
+                    @error('start_date') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Expiry Date</label>
                     <input type="date" name="expiry_date" value="{{ old('expiry_date', optional($store->expiry_date)->format('Y-m-d')) }}"
                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                     <p class="mt-1 text-xs text-gray-400">Optional. After this date, this store and its offers stop showing anywhere on the frontend.</p>
+                    @error('expiry_date') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Star Rating (0–5)</label>

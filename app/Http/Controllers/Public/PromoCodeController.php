@@ -17,7 +17,7 @@ class PromoCodeController extends Controller
         $q = $request->string('q')->value();
         $storeCategoryId = $request->integer('store_category_id');
 
-        $offers = Offer::with('store')
+        $offers = Offer::with(['store.storeSlugPrefix', 'store.storeSlugSuffix'])
             ->whereHas('store', fn ($sq) => $sq->where('region_id', $region->id)->visible()
                 ->when($storeCategoryId, fn ($csq) => $csq->where('category_id', $storeCategoryId)))
             ->where('is_active', true)
@@ -72,6 +72,7 @@ class PromoCodeController extends Controller
         $viewData = [
             'region' => $region,
             'pageType' => 'coupons',
+            'currentPageScripts' => $settings,
             'offers' => $offers,
             'storeCategories' => $storeCategories,
             'selectedStoreCategoryId' => $request->integer('store_category_id') ?: null,
