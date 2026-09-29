@@ -21,7 +21,14 @@ use Illuminate\Support\Facades\Route;
 // at route-registration time, same DB-backed-route-shape pattern as
 // AdminSetting::panelPath() below — cleared via route:clear whenever the
 // default region changes or its code is edited (see RegionController).
-$defaultRegion = Region::where('is_active', true)->where('is_default', true)->first();
+// Wrapped the same way as AdminSetting::panelPath() — on a brand-new install
+// this file is still `require`'d (and this query still runs) during
+// `artisan migrate` itself, before the `regions` table exists yet.
+try {
+    $defaultRegion = Region::where('is_active', true)->where('is_default', true)->first();
+} catch (\Throwable) {
+    $defaultRegion = null;
+}
 
 if (! $defaultRegion || $defaultRegion->code) {
     // Deliberately NOT `use ($defaultRegion)` — `route:cache` serializes
